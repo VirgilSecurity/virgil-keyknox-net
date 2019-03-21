@@ -137,9 +137,26 @@ namespace Keyknox
             return addedCloudEntries;
         }
 
-        public void UpdateEntry(string name, byte[] data, Dictionary<string, string> meta)
+        public async Task<CloudEntry> UpdateEntry(string name, byte[] data, Dictionary<string, string> meta = null)
         {
-            throw new NotImplementedException();
+            // todo error if !syncWasCalled
+            if  (!cloudEntries.ContainsKey(name)){
+                throw new NotImplementedException();
+            }
+            var cloudEntry = cloudEntries[name];
+            cloudEntry.ModificationDate = DateTime.Now;
+            cloudEntry.Data = data;
+            cloudEntry.Meta = meta;
+            this.cloudEntries.Add(name, cloudEntry);
+            var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
+                Bytes.FromString(serializer.Serialize(this.cloudEntries)), keyknoxHash);
+
+            var entries = serializer.Deserialize<List<CloudEntry>>(Bytes.ToString(decryptedKeyknoxVal.Value));
+            var namedEntries = new Dictionary<string, CloudEntry>();
+            this.keyknoxHash = decryptedKeyknoxVal.KeyknoxHash;
+            entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
+            this.cloudEntries = namedEntries;
+            return cloudEntry;
         }
     }
 }
