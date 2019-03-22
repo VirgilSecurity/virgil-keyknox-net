@@ -16,7 +16,7 @@ namespace Keyknox
         private Utils.IJsonSerializer serializer;
        // private Lazy<Task<Dictionary<string, CloudEntry>>> cloudEntries;
         private Dictionary<string, CloudEntry> cloudEntries;
-        private byte[] keyknoxHash;
+        private DecryptedKeyknoxValue previousDecryptedKeyknoxValue;
         private bool syncWasCalled;
         public CloudKeyStorage(KeyknoxManager keyknoxManager, Utils.IJsonSerializer serializer = null)
         {
@@ -38,7 +38,7 @@ namespace Keyknox
             var entries = serializer.Deserialize<List<CloudEntry>>(Bytes.ToString(decryptedKeyknoxValue.Value));
             var namedEntries = new Dictionary<string, CloudEntry>();
             syncWasCalled = true;
-            this.keyknoxHash = decryptedKeyknoxValue.KeyknoxHash;
+            this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
             entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
             cloudEntries = namedEntries;
             return namedEntries;
@@ -54,7 +54,7 @@ namespace Keyknox
             cloudEntries.Remove(name);
 
             var entries = serializer.Serialize(cloudEntries);
-            var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(Bytes.FromString(entries), keyknoxHash);               
+            var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(Bytes.FromString(entries), previousDecryptedKeyknoxValue.KeyknoxHash);               
         }
 
         public async Task DeteleAll()
@@ -65,7 +65,7 @@ namespace Keyknox
             var entries = serializer.Deserialize<List<CloudEntry>>(Bytes.ToString(decryptedKeyknoxVal.Value));
             var namedEntries = new Dictionary<string, CloudEntry>();
             syncWasCalled = true;
-            this.keyknoxHash = decryptedKeyknoxVal.KeyknoxHash;
+            this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
             entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
             this.cloudEntries = namedEntries;
 
@@ -79,10 +79,10 @@ namespace Keyknox
                 throw new NotImplementedException();
         }
 
-        public CloudEntry[] RetrieveAllEntries()
+        public List<CloudEntry> RetrieveAllEntries()
         {
             // todo !sync -> error
-            return this.cloudEntries.Values.ToArray();
+            return this.cloudEntries.Values.ToList();
             //throw new NotImplementedException();
         }
 
@@ -127,11 +127,11 @@ namespace Keyknox
             }
 
             var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                Bytes.FromString(serializer.Serialize(this.cloudEntries)), keyknoxHash);
+                Bytes.FromString(serializer.Serialize(this.cloudEntries)), previousDecryptedKeyknoxValue.KeyknoxHash);
 
             var entries = serializer.Deserialize<List<CloudEntry>>(Bytes.ToString(decryptedKeyknoxVal.Value));
             var namedEntries = new Dictionary<string, CloudEntry>();
-            this.keyknoxHash = decryptedKeyknoxVal.KeyknoxHash;
+            this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
             entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
             this.cloudEntries = namedEntries;
             return addedCloudEntries;
@@ -140,6 +140,7 @@ namespace Keyknox
         public async Task<CloudEntry> UpdateEntry(string name, byte[] data, Dictionary<string, string> meta = null)
         {
             // todo error if !syncWasCalled
+
             if  (!cloudEntries.ContainsKey(name)){
                 throw new NotImplementedException();
             }
@@ -149,14 +150,30 @@ namespace Keyknox
             cloudEntry.Meta = meta;
             this.cloudEntries.Add(name, cloudEntry);
             var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                Bytes.FromString(serializer.Serialize(this.cloudEntries)), keyknoxHash);
+                Bytes.FromString(serializer.Serialize(this.cloudEntries)), previousDecryptedKeyknoxValue.KeyknoxHash);
 
             var entries = serializer.Deserialize<List<CloudEntry>>(Bytes.ToString(decryptedKeyknoxVal.Value));
             var namedEntries = new Dictionary<string, CloudEntry>();
-            this.keyknoxHash = decryptedKeyknoxVal.KeyknoxHash;
+            this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
             entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
             this.cloudEntries = namedEntries;
             return cloudEntry;
+        }
+
+        public async Task<DecryptedKeyknoxValue> UpdateRecipients(IPublicKey[] publicKeys, IPrivateKey privateKey){
+            // todo error if !syncWasCalled
+            if (previousDecryptedKeyknoxValue.Value == null || !previousDecryptedKeyknoxValue.Value.Any()){
+                return previousDecryptedKeyknoxValue;
+            }
+            var decryptedKeyknoxValue = await this.keyknoxManager.UpdateRecipientsAndPushValue(
+                previousDecryptedKeyknoxValue.Value, previousDecryptedKeyknoxValue.KeyknoxHash, publicKeys, privateKey);
+            var entries = serializer.Deserialize<List<CloudEntry>>(Bytes.ToString(decryptedKeyknoxValue.Value));
+            var namedEntries = new Dictionary<string, CloudEntry>();
+            syncWasCalled = true;
+            this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
+            entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
+            cloudEntries = namedEntries;
+            return previousDecryptedKeyknoxValue;
         }
     }
 }
