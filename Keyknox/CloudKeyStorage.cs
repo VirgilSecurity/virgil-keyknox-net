@@ -18,6 +18,8 @@ namespace Keyknox
         private Dictionary<string, CloudEntry> cloudEntries;
         private DecryptedKeyknoxValue previousDecryptedKeyknoxValue;
         private bool syncWasCalled;
+        static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
+
         public CloudKeyStorage(KeyknoxManager keyknoxManager, ICloudSerializer serializer = null)
         {
             this.keyknoxManager = keyknoxManager;
@@ -25,7 +27,6 @@ namespace Keyknox
             // this.cloudEntries = new Lazy<Task<Dictionary<string, CloudEntry>>>(
             //    () => RetrieveCloudEntries()
             //);
-
         }
 
         public CloudKeyStorage(IAccessTokenProvider accessTokenProvider,
@@ -35,57 +36,103 @@ namespace Keyknox
         }
         private async Task<Dictionary<string, CloudEntry>> RetrieveCloudEntries()
         {
-            var decryptedKeyknoxValue = await keyknoxManager.PullValueAsync();
-            syncWasCalled = true;
-            this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
-            cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
+            await semaphoreSlim.WaitAsync();
+            try{
+                var decryptedKeyknoxValue = await keyknoxManager.PullValueAsync();
+                syncWasCalled = true;
+                this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
+                cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
+            }finally{
+                semaphoreSlim.Release();
+            }
 
             return cloudEntries;
         }
         public async Task DeteleEntry(string name)
         {
             // todo error if !syncWasCalled
-            if (!cloudEntries.ContainsKey(name))
-            {
-                throw new Exception("missing key");
-            }
-            cloudEntries.Remove(name);
+            await semaphoreSlim.WaitAsync();
+            try{
+                if (!cloudEntries.ContainsKey(name))
+                {
+                    throw new Exception("missing key");
+                }
+                cloudEntries.Remove(name);
 
-            var entries = serializer.Serialize(cloudEntries);
-            var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(Bytes.FromString(entries), previousDecryptedKeyknoxValue.KeyknoxHash);
+                var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
+                    serializer.Serialize(cloudEntries),
+                    previousDecryptedKeyknoxValue.KeyknoxHash);
+                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public async Task DeteleAll()
         {
             // todo error if !syncWasCalled
-            var decryptedKeyknoxVal = await keyknoxManager.ResetValueAsync();
-            this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                var decryptedKeyknoxVal = await keyknoxManager.ResetValueAsync();
+                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
 
-            cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public bool ExistsEntry(string name)
         {
-            return this.cloudEntries.ContainsKey(name);
             // todo !sync -> error
-            throw new NotImplementedException();
+
+            semaphoreSlim.Wait();
+            try
+            {
+                return this.cloudEntries.ContainsKey(name);
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public List<CloudEntry> RetrieveAllEntries()
         {
             // todo !sync -> error
+            semaphoreSlim.Wait();
+            try
+            {
             return this.cloudEntries.Values.ToList();
-            //throw new NotImplementedException();
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public CloudEntry RetrieveEntry(string name)
         {
             // todo error if !syncWasCalled
-            if (!cloudEntries.ContainsKey(name))
+            semaphoreSlim.Wait();
+            try
             {
-                throw new Exception("missing key");
+                if (!cloudEntries.ContainsKey(name))
+                {
+                    throw new Exception("missing key");
+                }
+                return cloudEntries[name];
             }
-            return cloudEntries[name];
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public async Task<CloudEntry> Store(string name, byte[] data, Dictionary<string, string> meta)
@@ -100,71 +147,95 @@ namespace Keyknox
         {
             // todo error if !syncWasCalled
             var names = keyEntries.Select(keyEntry => keyEntry.Name);
-            if (this.cloudEntries.Keys.Intersect(names).Any())
+
+            semaphoreSlim.Wait();
+            try
             {
-                throw new NotImplementedException();
-            }
-            var addedCloudEntries = new List<CloudEntry>();
-            foreach (var keyEntry in keyEntries)
-            {
-                var cloudEntry = new CloudEntry()
+                if (this.cloudEntries.Keys.Intersect(names).Any())
                 {
-                    Name = keyEntry.Name,
-                    Data = keyEntry.Data,
-                    CreationDate = DateTime.Now,
-                    Meta = keyEntry.Meta,
-                    ModificationDate = DateTime.Now
-                };
-                addedCloudEntries.Add(cloudEntry);
-                this.cloudEntries.Add(cloudEntry.Name, cloudEntry);
+                    throw new NotImplementedException();
+                }
+                var addedCloudEntries = new List<CloudEntry>();
+                foreach (var keyEntry in keyEntries)
+                {
+                    var cloudEntry = new CloudEntry()
+                    {
+                        Name = keyEntry.Name,
+                        Data = keyEntry.Data,
+                        CreationDate = DateTime.Now,
+                        Meta = keyEntry.Meta,
+                        ModificationDate = DateTime.Now
+                    };
+                    addedCloudEntries.Add(cloudEntry);
+                    this.cloudEntries.Add(cloudEntry.Name, cloudEntry);
+                }
+
+                var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
+                    serializer.Serialize(this.cloudEntries), previousDecryptedKeyknoxValue.KeyknoxHash);
+                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+
+
+                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+                return addedCloudEntries;
             }
-
-            var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                serializer.Serialize(this.cloudEntries), previousDecryptedKeyknoxValue.KeyknoxHash);
-            this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
-
-
-            cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
-            return addedCloudEntries;
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public async Task<CloudEntry> UpdateEntry(string name, byte[] data, Dictionary<string, string> meta = null)
         {
             // todo error if !syncWasCalled
-
-            if (!cloudEntries.ContainsKey(name))
+            semaphoreSlim.Wait();
+            try
             {
-                throw new NotImplementedException();
-            }
-            var cloudEntry = cloudEntries[name];
-            cloudEntry.ModificationDate = DateTime.Now;
-            cloudEntry.Data = data;
-            cloudEntry.Meta = meta;
-            this.cloudEntries.Add(name, cloudEntry);
-            var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                serializer.Serialize(this.cloudEntries),
-                previousDecryptedKeyknoxValue.KeyknoxHash);
-            this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+                if (!cloudEntries.ContainsKey(name))
+                {
+                    throw new NotImplementedException();
+                }
+                var cloudEntry = cloudEntries[name];
+                cloudEntry.ModificationDate = DateTime.Now;
+                cloudEntry.Data = data;
+                cloudEntry.Meta = meta;
+                this.cloudEntries.Add(name, cloudEntry);
+                var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
+                    serializer.Serialize(this.cloudEntries),
+                    previousDecryptedKeyknoxValue.KeyknoxHash);
+                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
 
-            cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
-            return cloudEntry;
+                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+                return cloudEntry;
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         public async Task<DecryptedKeyknoxValue> UpdateRecipients(IPublicKey[] publicKeys, IPrivateKey privateKey)
         {
             // todo error if !syncWasCalled
-            if (previousDecryptedKeyknoxValue.Value == null || !previousDecryptedKeyknoxValue.Value.Any())
+            semaphoreSlim.Wait();
+            try
             {
+                if (previousDecryptedKeyknoxValue.Value == null || !previousDecryptedKeyknoxValue.Value.Any())
+                {
+                    return previousDecryptedKeyknoxValue;
+                }
+                var decryptedKeyknoxValue = await this.keyknoxManager.UpdateRecipientsAndPushValue(
+                    previousDecryptedKeyknoxValue.Value, previousDecryptedKeyknoxValue.KeyknoxHash, publicKeys, privateKey);
+
+                this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
+
+                cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
+
                 return previousDecryptedKeyknoxValue;
             }
-            var decryptedKeyknoxValue = await this.keyknoxManager.UpdateRecipientsAndPushValue(
-                previousDecryptedKeyknoxValue.Value, previousDecryptedKeyknoxValue.KeyknoxHash, publicKeys, privateKey);
-
-            this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
-
-            cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
-
-            return previousDecryptedKeyknoxValue;
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
     }
 }
