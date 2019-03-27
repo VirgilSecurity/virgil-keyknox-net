@@ -15,8 +15,9 @@ namespace Keyknox
         private KeyknoxManager keyknoxManager;
         private ICloudSerializer serializer;
         // private Lazy<Task<Dictionary<string, CloudEntry>>> cloudEntries;
-        private Dictionary<string, CloudEntry> cloudEntries;
-        private DecryptedKeyknoxValue previousDecryptedKeyknoxValue;
+        //private Dictionary<string, CloudEntry> cloudEntries;
+        private CloudKeyCache cloudKeyCache;
+        //private DecryptedKeyknoxValue previousDecryptedKeyknoxValue;
         private bool syncWasCalled;
         static SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
 
@@ -40,30 +41,32 @@ namespace Keyknox
             try{
                 var decryptedKeyknoxValue = await keyknoxManager.PullValueAsync();
                 syncWasCalled = true;
-                this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
-                cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
+                cloudKeyCache = new CloudKeyCache(decryptedKeyknoxValue, serializer);
+                //this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
+                //cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
             }finally{
                 semaphoreSlim.Release();
             }
 
-            return cloudEntries;
+            return cloudKeyCache.Entries;
         }
         public async Task DeteleEntry(string name)
         {
             // todo error if !syncWasCalled
             await semaphoreSlim.WaitAsync();
             try{
-                if (!cloudEntries.ContainsKey(name))
+                if (!cloudKeyCache.Entries.ContainsKey(name))
                 {
                     throw new Exception("missing key");
                 }
-                cloudEntries.Remove(name);
+                cloudKeyCache.Entries.Remove(name);
 
                 var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                    serializer.Serialize(cloudEntries),
-                    previousDecryptedKeyknoxValue.KeyknoxHash);
-                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
-                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+                    serializer.Serialize(cloudKeyCache.Entries),
+                    cloudKeyCache.Response.KeyknoxHash);
+                cloudKeyCache.Refresh(decryptedKeyknoxVal);
+                //this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+               // cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
             }
             finally
             {
@@ -78,9 +81,10 @@ namespace Keyknox
             try
             {
                 var decryptedKeyknoxVal = await keyknoxManager.ResetValueAsync();
-                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+                cloudKeyCache.Refresh(decryptedKeyknoxVal);
+              //  this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
 
-                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+              //  cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
             }
             finally
             {
@@ -95,7 +99,7 @@ namespace Keyknox
             semaphoreSlim.Wait();
             try
             {
-                return this.cloudEntries.ContainsKey(name);
+                return this.cloudKeyCache.Entries.ContainsKey(name);
             }
             finally
             {
@@ -109,7 +113,7 @@ namespace Keyknox
             semaphoreSlim.Wait();
             try
             {
-            return this.cloudEntries.Values.ToList();
+                return this.cloudKeyCache.Entries.Values.ToList();
             }
             finally
             {
@@ -123,11 +127,11 @@ namespace Keyknox
             semaphoreSlim.Wait();
             try
             {
-                if (!cloudEntries.ContainsKey(name))
+                if (!this.cloudKeyCache.Entries.ContainsKey(name))
                 {
                     throw new Exception("missing key");
                 }
-                return cloudEntries[name];
+                return this.cloudKeyCache.Entries[name];
             }
             finally
             {
@@ -151,7 +155,7 @@ namespace Keyknox
             semaphoreSlim.Wait();
             try
             {
-                if (this.cloudEntries.Keys.Intersect(names).Any())
+                if (this.cloudKeyCache.Entries.Keys.Intersect(names).Any())
                 {
                     throw new NotImplementedException();
                 }
@@ -167,15 +171,17 @@ namespace Keyknox
                         ModificationDate = DateTime.Now
                     };
                     addedCloudEntries.Add(cloudEntry);
-                    this.cloudEntries.Add(cloudEntry.Name, cloudEntry);
+                    this.cloudKeyCache.Entries.Add(cloudEntry.Name, cloudEntry);
                 }
 
                 var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                    serializer.Serialize(this.cloudEntries), previousDecryptedKeyknoxValue.KeyknoxHash);
-                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+                    serializer.Serialize(this.cloudKeyCache.Entries), this.cloudKeyCache.Response.KeyknoxHash);
+
+                cloudKeyCache.Refresh(decryptedKeyknoxVal);
+               // this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
 
 
-                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+              //  cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
                 return addedCloudEntries;
             }
             finally
@@ -190,21 +196,22 @@ namespace Keyknox
             semaphoreSlim.Wait();
             try
             {
-                if (!cloudEntries.ContainsKey(name))
+                if (!this.cloudKeyCache.Entries.ContainsKey(name))
                 {
                     throw new NotImplementedException();
                 }
-                var cloudEntry = cloudEntries[name];
+                var cloudEntry = this.cloudKeyCache.Entries[name];
                 cloudEntry.ModificationDate = DateTime.Now;
                 cloudEntry.Data = data;
                 cloudEntry.Meta = meta;
-                this.cloudEntries.Add(name, cloudEntry);
+                this.cloudKeyCache.Entries.Add(name, cloudEntry);
                 var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                    serializer.Serialize(this.cloudEntries),
-                    previousDecryptedKeyknoxValue.KeyknoxHash);
-                this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
+                    serializer.Serialize(this.cloudKeyCache.Entries),
+                    this.cloudKeyCache.Response.KeyknoxHash);
+                cloudKeyCache.Refresh(decryptedKeyknoxVal);
+               // this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
 
-                cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+                //cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
                 return cloudEntry;
             }
             finally
@@ -219,18 +226,19 @@ namespace Keyknox
             semaphoreSlim.Wait();
             try
             {
-                if (previousDecryptedKeyknoxValue.Value == null || !previousDecryptedKeyknoxValue.Value.Any())
+                if (this.cloudKeyCache.Response.Value == null || !this.cloudKeyCache.Response.Value.Any())
                 {
-                    return previousDecryptedKeyknoxValue;
+                    return this.cloudKeyCache.Response;
                 }
                 var decryptedKeyknoxValue = await this.keyknoxManager.UpdateRecipientsAndPushValue(
-                    previousDecryptedKeyknoxValue.Value, previousDecryptedKeyknoxValue.KeyknoxHash, publicKeys, privateKey);
+                    this.cloudKeyCache.Response.Value, this.cloudKeyCache.Response.KeyknoxHash, publicKeys, privateKey);
 
-                this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
+                cloudKeyCache.Refresh(decryptedKeyknoxValue);
+             //   this.previousDecryptedKeyknoxValue = decryptedKeyknoxValue;
 
-                cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
+              //  cloudEntries = serializer.Deserialize(decryptedKeyknoxValue.Value);
 
-                return previousDecryptedKeyknoxValue;
+                return cloudKeyCache.Response;
             }
             finally
             {
