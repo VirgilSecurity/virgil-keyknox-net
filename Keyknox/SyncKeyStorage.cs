@@ -87,19 +87,20 @@ namespace Keyknox
         private KeyEntry CloneFromCloudToLocal(CloudEntry entry)
         {
             var meta = new Dictionary<string, string>(entry.Meta);
-            string format = "MMM ddd d HH:mm yyyy";
-            meta.Add("keyknox_crd", entry.CreationDate.ToString(format));
-            meta.Add("keyknox_upd", entry.ModificationDate.ToString(format));
 
             var keyEntry = new KeyEntry()
             {
                 Name = entry.Name,
                 Value = entry.Data,
-                Meta = meta
+                Meta = MetaDate.CopyAndAppendDatesTo(entry.Meta, 
+                                                     entry.CreationDate, 
+                                                     entry.ModificationDate)
             };
             this.localStorage.Store(keyEntry);
             return keyEntry;
         }
+
+
 
         public async Task SynchronizeStoragesAsync()
         {
@@ -141,10 +142,11 @@ namespace Keyknox
             {
                 var localKeyEntry = this.localStorage.Load(name);
                 var cloudEntry = cloudEntries[name];
-                string format = "MMM ddd d HH:mm yyyy";
-                var modificationDate = DateTime.ParseExact(localKeyEntry.Meta["keyknox_upd"], format, null);
+                DateTime modificationDate = MetaDate.ExtractModificationDateFrom(
+                    (Dictionary<string, string>)localKeyEntry.Meta);
 
-                if (modificationDate < cloudEntry.ModificationDate){
+                if (modificationDate < cloudEntry.ModificationDate)
+                {
                     this.localStorage.Delete(name);
                     CloneFromCloudToLocal(cloudEntry);
                 }
@@ -159,5 +161,7 @@ namespace Keyknox
                 }
             }
         }
+
+
     }
 }
