@@ -57,25 +57,66 @@ namespace Keyknox
             DeleteLocalEntries(this.localStorage.Names());
         }
 
-        public async Task StoreEntry(string name, byte[] data, Dictionary<string, string> meta){
-            
+        public async Task<KeyEntry> StoreEntry(string name, byte[] data, Dictionary<string, string> meta){
+                var keyEntry = new KeyEntry() { Name = name, Meta = meta, Value = data };
+            var storedEntries = await StoreEntries(new List<KeyEntry>() { keyEntry });
+            return storedEntries.First();
         }
+
+        public async Task<List<KeyEntry>> StoreEntries(List<KeyEntry> entries)
+        {
+            var localEntriesNames = new List<string>(this.localStorage.Names());
+            foreach (var entry in entries)
+            {
+                if (localEntriesNames.Contains(entry.Name) || this.cloudKeyStorage.ExistsEntry(entry.Name)){
+                    throw new Exception("already exist"); 
+                }
+            }
+            var keyEntries = new List<KeyEntry>();
+            var cloudEntries = await this.cloudKeyStorage.StoreEntries(entries);
+
+            foreach (var entry in cloudEntries)
+            {
+                KeyEntry keyEntry = CloneFromCloudToLocal(entry);
+                keyEntries.Add(keyEntry);
+            }
+
+            return keyEntries;
+        }
+
+        private KeyEntry CloneFromCloudToLocal(CloudEntry entry)
+        {
+            var meta = new Dictionary<string, string>(entry.Meta);
+            string format = "MMM ddd d HH:mm yyyy";
+            meta.Add("keyknox_crd", entry.CreationDate.ToString(format));
+            meta.Add("keyknox_upd", entry.ModificationDate.ToString(format));
+
+            var keyEntry = new KeyEntry()
+            {
+                Name = entry.Name,
+                Value = entry.Data,
+                Meta = meta
+            };
+            this.localStorage.Store(keyEntry);
+            return keyEntry;
+        }
+
         public async Task SynchronizeStoragesAsync()
         {
-            var cloudEntries = await this.cloudKeyStorage.RetrieveCloudEntries();
-            //var cloudEntries = this.cloudKeyStorage.RetrieveAllEntries();
-            var cloudEntriesNames = cloudEntries.Keys.ToList();
-          //  cloudEntries.ForEach(entry => cloudEntriesNames.Add(entry.Name));
-
             var localEntriesNames = this.localStorage.Names();
-            var localEntriesToDelete = localEntriesNames.Except(cloudEntriesNames);
 
-            DeleteLocalEntries(localEntriesToDelete);
+            var cloudEntries = await this.cloudKeyStorage.RetrieveCloudEntries();
+            var cloudEntriesNames = cloudEntries.Keys.ToList();
+
+            var EntriesToCompare = cloudEntriesNames.Intersect(localEntriesNames);
+            await CompareAndUpdateEntries(EntriesToCompare, cloudEntries);
+
             var cloudEntriesToStore = cloudEntriesNames.Except(localEntriesNames);
             StoreCloudEntries(cloudEntriesToStore, cloudEntries);
 
-            var EntriesToCompare = cloudEntriesNames.Intersect(localEntriesNames);
-            CompareAndUpdateEntries(EntriesToCompare, cloudEntries);
+            var localEntriesToDelete = localEntriesNames.Except(cloudEntriesNames);
+            DeleteLocalEntries(localEntriesToDelete);
+
         }
 
         private void DeleteLocalEntries(IEnumerable<string> names){
@@ -95,15 +136,27 @@ namespace Keyknox
             }
         }
 
-        private void CompareAndUpdateEntries(IEnumerable<string> names, Dictionary<string, CloudEntry> cloudEntries){
+        private async Task CompareAndUpdateEntries(IEnumerable<string> names, Dictionary<string, CloudEntry> cloudEntries){
             foreach (var name in names)
             {
                 var localKeyEntry = this.localStorage.Load(name);
                 var cloudEntry = cloudEntries[name];
-                // todo compare creation data in meta
-                //this.localStorage.Store(
-                //    new KeyEntry { Value = cloudEntries[name].Data, Name = cloudEntries[name].Name, Meta = cloudEntries[name].Meta }
-                //);
+                string format = "MMM ddd d HH:mm yyyy";
+                var modificationDate = DateTime.ParseExact(localKeyEntry.Meta["keyknox_upd"], format, null);
+
+                if (modificationDate < cloudEntry.ModificationDate){
+                    this.localStorage.Delete(name);
+                    CloneFromCloudToLocal(cloudEntry);
+                }
+
+                if (modificationDate > cloudEntry.ModificationDate)
+                {
+                    await this.cloudKeyStorage.UpdateEntryAsync(name,
+                                                                localKeyEntry.Value,
+                                                                (Dictionary<string, string>)localKeyEntry.Meta);
+                    this.localStorage.Delete(name);
+                    CloneFromCloudToLocal(cloudEntry);
+                }
             }
         }
     }
