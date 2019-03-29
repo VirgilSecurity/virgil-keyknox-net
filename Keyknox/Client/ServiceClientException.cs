@@ -33,6 +33,7 @@
  *
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
+
 namespace Keyknox.Client
 {
     using System;
