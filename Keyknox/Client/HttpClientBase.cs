@@ -46,6 +46,7 @@ namespace Keyknox.Client
     using System.Text;
     using System.Threading.Tasks;
     using Virgil.SDK.Common;
+    using Virgil.SDK.Web.Connection;
 
     public class HttpClientBase
     {
@@ -173,9 +174,9 @@ namespace Keyknox.Client
 
             if (!string.IsNullOrWhiteSpace(body))
             {
-                var error = serializer.Deserialize<HttpError>(body);
+                var error = this.serializer.Deserialize<KeyknoxServiceError>(body);
 
-                errorCode = error?.Code ?? 0;
+                errorCode = error?.ErrorCode ?? 0;
 
                 if (error != null && error.Message != null)
                 {
