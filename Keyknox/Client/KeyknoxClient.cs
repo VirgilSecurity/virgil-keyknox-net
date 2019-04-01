@@ -43,8 +43,8 @@ namespace Keyknox.Client
 
     public class KeyknoxClient : HttpClientBase, IKeyknoxClient
     {
-        public KeyknoxClient(IJsonSerializer serializer, string serviceUrl = null) :
-        base(serializer, serviceUrl)
+        public KeyknoxClient(IJsonSerializer serializer, string serviceUrl = null)
+            : base(serializer, serviceUrl)
         {
         }
 

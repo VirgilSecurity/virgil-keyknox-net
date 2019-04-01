@@ -34,19 +34,16 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-namespace Virgil.SDK.Web
+namespace Keyknox
 {
-    public class ClientException : VirgilException
+    public class CloudStorageSyncException : KeyknoxException
     {
-        public readonly int ServiceErrorCode;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClientException"/> class.
+        /// Initializes a new instance of the <see cref="CloudStorageSyncException"/> class.
         /// </summary>
-        public ClientException(int serviceErrorCode, string message) :
+        public CloudStorageSyncException(string message) :
         base(message)
         {
-            this.ServiceErrorCode = serviceErrorCode;
         }
     }
 }
