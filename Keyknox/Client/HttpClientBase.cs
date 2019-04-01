@@ -51,7 +51,7 @@ namespace Keyknox.Client
     public class HttpClientBase
     {
         const string previousHashHeaderAlias = "VIRGIL_KEYKNOX_PREVIOUS_HASH_KEY";
-        const string defaultServiceUrl = "https://api.virgilsecurity.com/";
+        private const string defaultServiceUrl = "https://api.virgilsecurity.com/";
         private readonly IJsonSerializer serializer;
 
         private HttpClient client;
@@ -87,13 +87,14 @@ namespace Keyknox.Client
             {
                 var serializedBody = this.serializer.Serialize(body);
                 request.Content = new StringContent(serializedBody, Encoding.UTF8, "application/json");
-                if (body.KeyknoxHash != null){
+                if (body.KeyknoxHash != null)
+                {
                     request.Headers.TryAddWithoutValidation(previousHashHeaderAlias, body.KeyknoxHash);
                 }
             }
 
             var response = await this.client.SendAsync(request).ConfigureAwait(false);
-            return await TryParseModel(response);
+            return await this.TryParseModel(response);
         }
 
         private async Task<BodyModel> TryParseModel(HttpResponseMessage response)
@@ -113,11 +114,12 @@ namespace Keyknox.Client
             return model;
         }
 
-        protected async Task<BodyModel> SendAsync(HttpMethod method, string endpoint, string token){
+        protected async Task<BodyModel> SendAsync(HttpMethod method, string endpoint, string token)
+        {
             var request = this.NewRequest(method, endpoint, token);
 
             var response = await this.client.SendAsync(request).ConfigureAwait(false);
-            return await TryParseModel(response);
+            return await this.TryParseModel(response);
         }
 
         private static string VirgilStatInfo()

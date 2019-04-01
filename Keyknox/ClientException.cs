@@ -38,14 +38,15 @@ namespace Virgil.SDK.Web
 {
     public class ClientException : VirgilException
     {
+        public readonly int ServiceErrorCode;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientException"/> class.
         /// </summary>
-        public ClientException(int serviceErrorCode, string message) : base(message)
+        public ClientException(int serviceErrorCode, string message) :
+        base(message)
         {
             this.ServiceErrorCode = serviceErrorCode;
         }
-
-        public readonly int ServiceErrorCode;
     }
 }

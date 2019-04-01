@@ -34,17 +34,18 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Virgil.SDK.Common;
-
 namespace Keyknox.Client
 {
-    public class KeyknoxClient : HttpClientBase, IKeyknoxClient 
+    using System;
+    using System.Net.Http;
+    using System.Threading.Tasks;
+    using Virgil.SDK.Common;
+
+    public class KeyknoxClient : HttpClientBase, IKeyknoxClient
     {
-        public KeyknoxClient(IJsonSerializer serializer, string serviceUrl = null):
-        base(serializer, serviceUrl){
+        public KeyknoxClient(IJsonSerializer serializer, string serviceUrl = null) :
+        base(serializer, serviceUrl)
+        {
         }
 
         public async Task<EncryptedKeyknoxValue> PullValueAsync(string token)
@@ -68,7 +69,8 @@ namespace Keyknox.Client
                 Meta = Bytes.ToString(meta, StringEncoding.BASE64),
                 Value = Bytes.ToString(value, StringEncoding.BASE64),
             };
-            if (previousHash != null){
+            if (previousHash != null)
+            {
                 model.KeyknoxHash = Bytes.ToString(previousHash, StringEncoding.BASE64);
             }
 

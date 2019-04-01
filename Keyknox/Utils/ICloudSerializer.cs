@@ -34,13 +34,15 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-using System.Collections.Generic;
-
 namespace Keyknox.Utils
 {
-    public interface ICloudSerializer 
+    using System.Collections.Generic;
+
+    public interface ICloudSerializer
     {
         byte[] Serialize(Dictionary<string, CloudEntry> entries);
+
         Dictionary<string, CloudEntry> Deserialize(byte[] data);
+
     }
 }

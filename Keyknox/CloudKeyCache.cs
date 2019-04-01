@@ -34,28 +34,30 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-using System;
-using System.Collections.Generic;
-using Keyknox.Utils;
-using Virgil.SDK.Common;
-
 namespace Keyknox
 {
+    using System;
+    using System.Collections.Generic;
+    using Keyknox.Utils;
+    using Virgil.SDK.Common;
+
     public class CloudKeyCache
     {
-        public Dictionary<string, CloudEntry> Entries{ get; private set; }
-        public DecryptedKeyknoxValue Response{ get; private set; }
         private ICloudSerializer serializer;
+
+        public Dictionary<string, CloudEntry> Entries { get; private set; }
+        public DecryptedKeyknoxValue Response { get; private set; }
 
         public CloudKeyCache(DecryptedKeyknoxValue keyknoxResponse, ICloudSerializer serializer = null)
         {
             this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonSerializer());
-            Refresh(keyknoxResponse);
+            this.Refresh(keyknoxResponse);
         }
 
-        public void Refresh(DecryptedKeyknoxValue keyknoxResponse){
-            Response = keyknoxResponse;
-            Entries = serializer.Deserialize(Response.Value);
+        public void Refresh(DecryptedKeyknoxValue keyknoxResponse)
+        {
+            this.Response = keyknoxResponse;
+            this.Entries = serializer.Deserialize(Response.Value);
         }
     }
 }

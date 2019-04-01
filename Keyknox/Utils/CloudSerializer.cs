@@ -36,9 +36,6 @@
 
 namespace Keyknox.Utils
 {
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Converters;
-    using System;
     using System.Collections.Generic;
     using Virgil.SDK.Common;
 
@@ -53,7 +50,7 @@ namespace Keyknox.Utils
 
         public Dictionary<string, CloudEntry> Deserialize(byte[] data)
         {
-            var entries = jsonSerializer.Deserialize<List<CloudEntry>>(Bytes.ToString(data));
+            var entries = this.jsonSerializer.Deserialize<List<CloudEntry>>(Bytes.ToString(data));
             var namedEntries = new Dictionary<string, CloudEntry>();
             entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
             return namedEntries;
@@ -61,7 +58,7 @@ namespace Keyknox.Utils
 
         public byte[] Serialize(Dictionary<string, CloudEntry> entries)
         {
-            return Bytes.FromString(jsonSerializer.Serialize(entries));
+            return Bytes.FromString(this.jsonSerializer.Serialize(entries));
         }
     }
 }

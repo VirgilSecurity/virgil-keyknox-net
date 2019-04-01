@@ -34,16 +34,16 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-using System;
-using System.Collections.Generic;
-
 namespace Keyknox
 {
+    using System;
+    using System.Collections.Generic;
+
     public class MetaDate
     {
-        const string format = "MMM ddd d HH:mm yyyy";
-        const string modificationDateKey = "keyknox_upd";
-        const string creationDateKey = "keyknox_crd";
+        private const string format = "MMM ddd d HH:mm yyyy";
+        private const string modificationDateKey = "keyknox_upd";
+        private const string creationDateKey = "keyknox_crd";
 
         public static DateTime ExtractModificationDateFrom(Dictionary<string, string> meta)
         {
@@ -56,7 +56,7 @@ namespace Keyknox
         }
 
         public static Dictionary<string, string> CopyAndAppendDatesTo(
-            Dictionary<string, string> originalMeta, 
+            Dictionary<string, string> originalMeta,
             DateTime creationDate,
             DateTime modificationDate)
         {
@@ -66,7 +66,5 @@ namespace Keyknox
 
             return meta;
         }
-
-
     }
 }
