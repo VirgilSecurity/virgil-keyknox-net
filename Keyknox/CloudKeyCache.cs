@@ -45,19 +45,20 @@ namespace Keyknox
     {
         private ICloudSerializer serializer;
 
-        public Dictionary<string, CloudEntry> Entries { get; private set; }
-        public DecryptedKeyknoxValue Response { get; private set; }
-
         public CloudKeyCache(DecryptedKeyknoxValue keyknoxResponse, ICloudSerializer serializer = null)
         {
             this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonSerializer());
             this.Refresh(keyknoxResponse);
         }
 
+        public Dictionary<string, CloudEntry> Entries { get; private set; }
+
+        public DecryptedKeyknoxValue Response { get; private set; }
+
         public void Refresh(DecryptedKeyknoxValue keyknoxResponse)
         {
             this.Response = keyknoxResponse;
-            this.Entries = serializer.Deserialize(Response.Value);
+            this.Entries = serializer.Deserialize(this.Response.Value);
         }
     }
 }

@@ -34,7 +34,6 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-using System;
 namespace Keyknox
 {
     public class EncryptedKeyknoxValue : KeyknoxValue

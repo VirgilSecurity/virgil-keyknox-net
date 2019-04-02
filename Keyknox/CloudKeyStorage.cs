@@ -61,26 +61,29 @@ namespace Keyknox
             this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonSerializer());
         }
 
-        public CloudKeyStorage(IAccessTokenProvider accessTokenProvider,
-                               IPrivateKey privateKey,
-                               IPublicKey[] publicKeys) :
-        this(new KeyknoxManager(accessTokenProvider, privateKey, publicKeys))
+        public CloudKeyStorage(
+            IAccessTokenProvider accessTokenProvider,
+            IPrivateKey privateKey,
+            IPublicKey[] publicKeys)
+            : this(new KeyknoxManager(accessTokenProvider, privateKey, publicKeys))
         {
         }
 
         public bool IsStorageSynchronized()
         {
-            return (this.cloudKeyCache != null && this.cloudKeyCache.Response != null);
+            return this.cloudKeyCache != null && this.cloudKeyCache.Response != null;
         }
-        
-        public async Task< Dictionary<string, CloudEntry> > RetrieveCloudEntries()
+
+        public async Task<Dictionary<string, CloudEntry>> RetrieveCloudEntries()
         {
             await SemaphoreSlim.WaitAsync();
             try
             {
                 var decryptedKeyknoxValue = await this.keyknoxManager.PullValueAsync();
-                this.cloudKeyCache = new CloudKeyCache(decryptedKeyknoxValue, serializer);
-            }finally{
+                this.cloudKeyCache = new CloudKeyCache(decryptedKeyknoxValue, this.serializer);
+            }
+            finally
+            {
                 SemaphoreSlim.Release();
             }
 
@@ -89,22 +92,22 @@ namespace Keyknox
 
         public async Task DeteleEntryAsync(string name)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             await SemaphoreSlim.WaitAsync();
-            try{
-                if (!cloudKeyCache.Entries.ContainsKey(name))
+            try
+            {
+                if (!this.cloudKeyCache.Entries.ContainsKey(name))
                 {
                     throw new Exception("missing key");
                 }
-                cloudKeyCache.Entries.Remove(name);
 
-                var decryptedKeyknoxVal = await keyknoxManager.PushValueAsync(
-                    serializer.Serialize(cloudKeyCache.Entries),
-                    cloudKeyCache.Response.KeyknoxHash);
-                cloudKeyCache.Refresh(decryptedKeyknoxVal);
-                //this.previousDecryptedKeyknoxValue = decryptedKeyknoxVal;
-               // cloudEntries = serializer.Deserialize(decryptedKeyknoxVal.Value);
+                this.cloudKeyCache.Entries.Remove(name);
+
+                var decryptedKeyknoxVal = await this.keyknoxManager.PushValueAsync(
+                    serializer.Serialize(this.cloudKeyCache.Entries),
+                    this.cloudKeyCache.Response.KeyknoxHash);
+                this.cloudKeyCache.Refresh(decryptedKeyknoxVal);
             }
             finally
             {
@@ -114,13 +117,13 @@ namespace Keyknox
 
         public async Task DeteleAllAsync()
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             await SemaphoreSlim.WaitAsync();
             try
             {
-                var decryptedKeyknoxVal = await keyknoxManager.ResetValueAsync();
-                cloudKeyCache.Refresh(decryptedKeyknoxVal);
+                var decryptedKeyknoxVal = await this.keyknoxManager.ResetValueAsync();
+                this.cloudKeyCache.Refresh(decryptedKeyknoxVal);
             }
             finally
             {
@@ -130,7 +133,7 @@ namespace Keyknox
 
         public bool ExistsEntry(string name)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             SemaphoreSlim.Wait();
             try
@@ -145,7 +148,7 @@ namespace Keyknox
 
         public List<CloudEntry> RetrieveAllEntries()
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             SemaphoreSlim.Wait();
             try
@@ -160,7 +163,7 @@ namespace Keyknox
 
         public CloudEntry RetrieveEntry(string name)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             SemaphoreSlim.Wait();
             try
@@ -180,7 +183,7 @@ namespace Keyknox
 
         public async Task<CloudEntry> Store(string name, byte[] data, Dictionary<string, string> meta)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             var entry = new KeyEntry() { Name = name, Value = data, Meta = meta };
             var stored = await this.StoreEntries(new List<KeyEntry> { entry });
@@ -189,7 +192,7 @@ namespace Keyknox
 
         public async Task<List<CloudEntry>> StoreEntries(List<KeyEntry> keyEntries)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             var names = keyEntries.Select(keyEntry => keyEntry.Name);
 
@@ -231,7 +234,7 @@ namespace Keyknox
 
         public async Task<CloudEntry> UpdateEntryAsync(string name, byte[] data, Dictionary<string, string> meta = null)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             SemaphoreSlim.Wait();
             try
@@ -261,7 +264,7 @@ namespace Keyknox
 
         public async Task<DecryptedKeyknoxValue> UpdateRecipients(IPublicKey[] publicKeys, IPrivateKey privateKey)
         {
-            ThrowExceptionIfNotSynchronized();
+            this.ThrowExceptionIfNotSynchronized();
 
             SemaphoreSlim.Wait();
             try
@@ -275,7 +278,6 @@ namespace Keyknox
                     this.cloudKeyCache.Response.Value, this.cloudKeyCache.Response.KeyknoxHash, publicKeys, privateKey);
 
                 this.cloudKeyCache.Refresh(decryptedKeyknoxValue);
-             
                 return this.cloudKeyCache.Response;
             }
             finally
@@ -286,7 +288,7 @@ namespace Keyknox
 
         private void ThrowExceptionIfNotSynchronized()
         {
-            if (!IsStorageSynchronized())
+            if (!this.IsStorageSynchronized())
             {
                 throw new CloudStorageSyncException("Cloud storage isn't synchronized.");
             }

@@ -36,11 +36,9 @@
 
 namespace Keyknox
 {
-    using System;
-    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using Keyknox.Client;
-    using Keyknox.Utils;
     using Virgil.CryptoAPI;
     using Virgil.SDK.Common;
     using Virgil.SDK.Web.Authorization;
@@ -99,7 +97,11 @@ namespace Keyknox
             IPublicKey[] newPublicKeys,
             IPrivateKey newPrivateKey = null)
         {
-            // todo exception if empty list of pblickeys
+            if (newPublicKeys == null || !newPublicKeys.Any())
+            {
+                throw new KeyknoxException("Public key isn't provided");
+            }
+
             var decryptedKeyknoxVal = await this.PullValueAsync();
             if (decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
                 || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0)

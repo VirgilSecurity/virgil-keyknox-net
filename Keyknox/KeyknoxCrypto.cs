@@ -37,6 +37,7 @@
 namespace Keyknox
 {
     using System;
+    using System.Linq;
     using Virgil.Crypto;
     using Virgil.Crypto.Foundation;
     using Virgil.CryptoAPI;
@@ -52,6 +53,9 @@ namespace Keyknox
 
         public DetachedEncryptionResult Encrypt(byte[] data, IPrivateKey privateKey, IPublicKey[] publicKeys)
         {
+            ValidatePublicKeys(publicKeys);
+            ValidatePrivateKey(privateKey);
+
             var encrypted = this.crypto.SignThenEncryptDetached(data, privateKey, publicKeys);
             return new DetachedEncryptionResult()
             {
@@ -62,17 +66,41 @@ namespace Keyknox
 
         public DecryptedKeyknoxValue Decrypt(EncryptedKeyknoxValue encryptedKeyknoxValue, IPrivateKey privateKey, IPublicKey[] publicKeys)
         {
-            //todo validate
+            if ((encryptedKeyknoxValue.Meta == null || !encryptedKeyknoxValue.Meta.Any()) &&
+                (encryptedKeyknoxValue.Value == null || !encryptedKeyknoxValue.Value.Any()))
+            {
+                return new DecryptedKeyknoxValue() { Value = new byte[0], Meta = new byte[0] };
+            }
+
+            ValidatePublicKeys(publicKeys);
+            ValidatePrivateKey(privateKey);
+
             var decrypted = this.crypto.DecryptThenVerifyDetached(
                 encryptedKeyknoxValue.Value,
                 encryptedKeyknoxValue.Meta,
-                privateKey, publicKeys);  
-            return new DecryptedKeyknoxValue() 
+                privateKey, publicKeys);
+            return new DecryptedKeyknoxValue()
             {
                 Value = decrypted,
                 Version = encryptedKeyknoxValue.Version,
                 KeyknoxHash = encryptedKeyknoxValue.KeyknoxHash
             };
+        }
+
+        private static void ValidatePublicKeys(IPublicKey[] publicKeys)
+        {
+            if (publicKeys == null || !publicKeys.Any())
+            {
+                throw new KeyknoxException("Public key isn't provided");
+            }
+        }
+
+        private static void ValidatePrivateKey(IPrivateKey privateKey)
+        {
+            if (privateKey == null)
+            {
+                throw new KeyknoxException($"Private key isn't provided");
+            }
         }
     }
 }
