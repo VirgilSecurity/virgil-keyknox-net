@@ -78,7 +78,8 @@ namespace Keyknox
             var decrypted = this.crypto.DecryptThenVerifyDetached(
                 encryptedKeyknoxValue.Value,
                 encryptedKeyknoxValue.Meta,
-                privateKey, publicKeys);
+                privateKey,
+                publicKeys);
             return new DecryptedKeyknoxValue()
             {
                 Value = decrypted,
