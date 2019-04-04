@@ -50,8 +50,8 @@ namespace Keyknox.Client
 
     public class HttpClientBase
     {
-        const string previousHashHeaderAlias = "VIRGIL_KEYKNOX_PREVIOUS_HASH_KEY";
-        private const string defaultServiceUrl = "https://api.virgilsecurity.com/";
+        const string PreviousHashHeaderAlias = "VIRGIL_KEYKNOX_PREVIOUS_HASH_KEY";
+        private const string DefaultServiceUrl = "https://api.virgilsecurity.com/";
         private readonly IJsonSerializer serializer;
 
         private HttpClient client;
@@ -66,7 +66,7 @@ namespace Keyknox.Client
         {
             this.serializer = serializer;
             this.client = new HttpClient();
-            this.BaseUri = new Uri(serviceUrl ?? defaultServiceUrl);
+            this.BaseUri = new Uri(serviceUrl ?? DefaultServiceUrl);
             this.client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -89,29 +89,12 @@ namespace Keyknox.Client
                 request.Content = new StringContent(serializedBody, Encoding.UTF8, "application/json");
                 if (body.KeyknoxHash != null)
                 {
-                    request.Headers.TryAddWithoutValidation(previousHashHeaderAlias, body.KeyknoxHash);
+                    request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash);
                 }
             }
 
             var response = await this.client.SendAsync(request).ConfigureAwait(false);
             return await this.TryParseModel(response);
-        }
-
-        private async Task<BodyModel> TryParseModel(HttpResponseMessage response)
-        {
-            var content = await response.Content.ReadAsAsync<string>();
-
-            this.HandleError(response.StatusCode, content);
-
-            var model = this.serializer.Deserialize<BodyModel>(content);
-
-            IEnumerable<string> previousHashHeader;
-            response.Headers.TryGetValues(previousHashHeaderAlias, out previousHashHeader);
-
-            var enumerator = previousHashHeader.GetEnumerator();
-            enumerator.MoveNext();
-            model.KeyknoxHash = enumerator.Current;
-            return model;
         }
 
         protected async Task<BodyModel> SendAsync(HttpMethod method, string endpoint, string token)
@@ -187,6 +170,23 @@ namespace Keyknox.Client
             }
 
             throw new ServiceClientException(errorCode, errorMessage);
+        }
+
+        private async Task<BodyModel> TryParseModel(HttpResponseMessage response)
+        {
+            var content = await response.Content.ReadAsAsync<string>();
+
+            this.HandleError(response.StatusCode, content);
+
+            var model = this.serializer.Deserialize<BodyModel>(content);
+
+            IEnumerable<string> previousHashHeader;
+            response.Headers.TryGetValues(PreviousHashHeaderAlias, out previousHashHeader);
+
+            var enumerator = previousHashHeader.GetEnumerator();
+            enumerator.MoveNext();
+            model.KeyknoxHash = enumerator.Current;
+            return model;
         }
     }
 }
