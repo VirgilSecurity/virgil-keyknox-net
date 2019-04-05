@@ -89,7 +89,7 @@ namespace Keyknox.Client
         public async Task<DecryptedKeyknoxValue> ResetValueAsync(string token)
         {
             var response = await this.SendAsync(
-                HttpMethod.Put, $"keyknox/v1/reset", token).ConfigureAwait(false);
+                HttpMethod.Post, $"keyknox/v1/reset", token).ConfigureAwait(false);
 
             return new DecryptedKeyknoxValue()
             {

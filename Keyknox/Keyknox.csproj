@@ -1,28 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
-    <PackageReference Include="Virgil.Crypto" Version="2.4.10" />
+    <Compile Remove="Class1.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Virgil.SDK" Version="5.0.6" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="Connection\HttpMethodExtensions.cs" />
-    <Compile Remove="CardClient.cs" />
-    <Compile Remove="Client\PheHttpClient.cs" />
-    <Compile Remove="IKeyStorage.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Utils\" />
-    <Folder Include="Exceptions\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Remove="Properties\launchSettings.json" />
+    <PackageReference Include="Virgil.Crypto" Version="2.6.2" />
   </ItemGroup>
 </Project>

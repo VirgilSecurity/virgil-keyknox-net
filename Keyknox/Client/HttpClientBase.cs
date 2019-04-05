@@ -50,7 +50,10 @@ namespace Keyknox.Client
 
     public class HttpClientBase
     {
-        const string PreviousHashHeaderAlias = "VIRGIL_KEYKNOX_PREVIOUS_HASH_KEY";
+        const string PreviousHashHeaderAlias = "Virgil-Keyknox-Previous-Hash";
+        const string HashHeaderAlias = "Virgil-Keyknox-Hash";
+
+
         private const string DefaultServiceUrl = "https://api.virgilsecurity.com/";
         private readonly IJsonSerializer serializer;
 
@@ -87,10 +90,12 @@ namespace Keyknox.Client
             {
                 var serializedBody = this.serializer.Serialize(body);
                 request.Content = new StringContent(serializedBody, Encoding.UTF8, "application/json");
-                if (body.KeyknoxHash != null)
-                {
-                    request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash);
-                }
+                request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash ?? "");
+
+              //  if (body.KeyknoxHash != null)
+              //  {
+              //      request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash);
+              //  }
             }
 
             var response = await this.client.SendAsync(request).ConfigureAwait(false);
@@ -174,14 +179,14 @@ namespace Keyknox.Client
 
         private async Task<BodyModel> TryParseModel(HttpResponseMessage response)
         {
-            var content = await response.Content.ReadAsAsync<string>();
+            var content = await response.Content.ReadAsStringAsync();
 
             this.HandleError(response.StatusCode, content);
 
             var model = this.serializer.Deserialize<BodyModel>(content);
 
             IEnumerable<string> previousHashHeader;
-            response.Headers.TryGetValues(PreviousHashHeaderAlias, out previousHashHeader);
+            response.Headers.TryGetValues(HashHeaderAlias, out previousHashHeader);
 
             var enumerator = previousHashHeader.GetEnumerator();
             enumerator.MoveNext();

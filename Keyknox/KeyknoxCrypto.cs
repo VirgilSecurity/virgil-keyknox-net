@@ -36,10 +36,8 @@
 
 namespace Keyknox
 {
-    using System;
     using System.Linq;
     using Virgil.Crypto;
-    using Virgil.Crypto.Foundation;
     using Virgil.CryptoAPI;
 
     public class KeyknoxCrypto : IKeyknoxCrypto

@@ -47,6 +47,7 @@ namespace Keyknox
         private string identity;
         private CloudKeyStorage cloudKeyStorage;
         private KeyStorage localStorage;
+        private bool IsStorageSynchronized;
 
         public SyncKeyStorage(
             string identity,
@@ -58,86 +59,7 @@ namespace Keyknox
             this.localStorage = localStorage;
         }
 
-        public KeyEntry RetrieveEntry(string name)
-        {
-            return this.localStorage.Load(name);
-        }
-
-        public async Task DeleteEntriesAsync(List<string> names)
-        {
-            var localEntriesNames = new List<string>(this.localStorage.Names());
-            var missingEntryNames = names.Except(localEntriesNames);
-            if (missingEntryNames.Any())
-            {
-                throw new Exception($"missing keys: {string.Join(", ", missingEntryNames)}");
-            }
-
-            foreach (var name in names)
-            {
-                await this.cloudKeyStorage.DeteleEntryAsync(name);
-                this.localStorage.Delete(name);
-            }
-        }
-
-        public bool ExistsEntry(string name)
-        {
-            return this.localStorage.Exists(name);
-        }
-
-        public List<KeyEntry> RetrieveAllEntries()
-        {
-            var localEntriesNames = this.localStorage.Names();
-            var keyEntries = new List<KeyEntry>();
-            foreach (var name in localEntriesNames)
-            {
-                keyEntries.Add(this.localStorage.Load(name));
-            }
-
-            return keyEntries;
-        }
-
-        public async Task DeleteEntryAsync(string name)
-        {
-            await this.DeleteEntriesAsync(new List<string>() { name });
-        }
-
-        public async Task DeleteAllEntries()
-        {
-            await this.cloudKeyStorage.DeteleAllAsync();
-            this.DeleteLocalEntries(this.localStorage.Names());
-        }
-
-        public async Task<KeyEntry> StoreEntry(string name, byte[] data, Dictionary<string, string> meta)
-        {
-            var keyEntry = new KeyEntry() { Name = name, Meta = meta, Value = data };
-            var storedEntries = await this.StoreEntries(new List<KeyEntry>() { keyEntry });
-            return storedEntries.First();
-        }
-
-        public async Task<List<KeyEntry>> StoreEntries(List<KeyEntry> entries)
-        {
-            var localEntriesNames = new List<string>(this.localStorage.Names());
-            foreach (var entry in entries)
-            {
-                if (localEntriesNames.Contains(entry.Name) || this.cloudKeyStorage.ExistsEntry(entry.Name))
-                {
-                    throw new Exception("already exist");
-                }
-            }
-
-            var keyEntries = new List<KeyEntry>();
-            var cloudEntries = await this.cloudKeyStorage.StoreEntries(entries);
-
-            foreach (var entry in cloudEntries)
-            {
-                KeyEntry keyEntry = this.CloneFromCloudToLocal(entry);
-                keyEntries.Add(keyEntry);
-            }
-
-            return keyEntries;
-        }
-
-        public async Task SynchronizeStoragesAsync()
+        public async Task Synchronize()
         {
             var localEntriesNames = this.localStorage.Names();
 
@@ -152,6 +74,94 @@ namespace Keyknox
 
             var localEntriesToDelete = localEntriesNames.Except(cloudEntriesNames);
             this.DeleteLocalEntries(localEntriesToDelete);
+            this.IsStorageSynchronized = true;
+        }
+
+        public KeyEntry RetrieveEntry(string name)
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            return this.localStorage.Load(name);
+        }
+
+        public async Task DeleteEntriesAsync(List<string> names)
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            var localEntriesNames = new List<string>(this.localStorage.Names());
+            var missingEntryNames = names.Except(localEntriesNames);
+            if (missingEntryNames.Any())
+            {
+                throw new KeyknoxException($"Entries missing: {string.Join(", ", missingEntryNames)}");
+            }
+
+            foreach (var name in names)
+            {
+                await this.cloudKeyStorage.DeteleEntryAsync(name);
+                this.localStorage.Delete(name);
+            }
+        }
+
+        public bool ExistsEntry(string name)
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            return this.localStorage.Exists(name);
+        }
+
+        public List<KeyEntry> RetrieveAllEntries()
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            var localEntriesNames = this.localStorage.Names();
+            var keyEntries = new List<KeyEntry>();
+            foreach (var name in localEntriesNames)
+            {
+                keyEntries.Add(this.localStorage.Load(name));
+            }
+
+            return keyEntries;
+        }
+
+        public async Task DeleteEntryAsync(string name)
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            await this.DeleteEntriesAsync(new List<string>() { name });
+        }
+
+        public async Task DeleteAllEntries()
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            await this.cloudKeyStorage.DeteleAllAsync();
+            this.DeleteLocalEntries(this.localStorage.Names());
+        }
+
+        public async Task<KeyEntry> StoreEntry(string name, byte[] data, Dictionary<string, string> meta)
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            var keyEntry = new KeyEntry() { Name = name, Meta = meta, Value = data };
+            var storedEntries = await this.StoreEntries(new List<KeyEntry>() { keyEntry });
+            return storedEntries.First();
+        }
+
+        public async Task<List<KeyEntry>> StoreEntries(List<KeyEntry> entries)
+        {
+            this.ThrowExceptionIfNotSynchronized();
+            var localEntriesNames = new List<string>(this.localStorage.Names());
+            foreach (var entry in entries)
+            {
+                if (localEntriesNames.Contains(entry.Name) || this.cloudKeyStorage.ExistsEntry(entry.Name))
+                {
+                    throw new KeyknoxException($"Entry already exists: #{entry.Name}");
+                }
+            }
+
+            var keyEntries = new List<KeyEntry>();
+            var cloudEntries = await this.cloudKeyStorage.StoreEntries(entries);
+
+            foreach (var entry in cloudEntries)
+            {
+                KeyEntry keyEntry = this.CloneFromCloudToLocal(entry);
+                keyEntries.Add(keyEntry);
+            }
+
+            return keyEntries;
         }
 
         private KeyEntry CloneFromCloudToLocal(CloudEntry entry)
@@ -217,6 +227,14 @@ namespace Keyknox
                     this.localStorage.Delete(name);
                     this.CloneFromCloudToLocal(cloudEntry);
                 }
+            }
+        }
+
+        private void ThrowExceptionIfNotSynchronized()
+        {
+            if (!this.IsStorageSynchronized)
+            {
+                throw new CloudStorageSyncException("Storage isn't synchronized.");
             }
         }
     }
