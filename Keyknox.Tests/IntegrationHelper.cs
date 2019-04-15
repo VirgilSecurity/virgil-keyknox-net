@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Bogus;
+using Keyknox.Client;
 using Virgil.Crypto;
 using Virgil.CryptoAPI;
 using Virgil.SDK.Common;
@@ -13,7 +15,7 @@ namespace Keyknox.Tests
     {
         public static VirgilCrypto Crypto = new VirgilCrypto();
         public static ServiceTestData ServiceTestData = new ServiceTestData("keyknox-stg");
-
+        public static Faker Faker = new Faker();
         public static IPrivateKey ApiPrivateKey()
         {
             return Crypto.ImportPrivateKey(
@@ -33,11 +35,11 @@ namespace Keyknox.Tests
         }
 
 
-        public static Task<string> EmulateServerResponseToBuildTokenRequest(TokenContext tokenContext, double lifeTimeMin = 10)
+        public static Task<string> EmulateServerResponseToBuildTokenRequest(TokenContext tokenContext, double lifeTimeMin = 5)
         {
             var serverResponse = Task<string>.Factory.StartNew(() =>
             {
-                Thread.Sleep(1000); // simulation of long-term processing
+                //Thread.Sleep(1000); // simulation of long-term processing
                 var data = new Dictionary<object, object>
                     {
                         {"username", "my_username"}
@@ -57,23 +59,38 @@ namespace Keyknox.Tests
             return serverResponse;
         }
 
+        public static KeyknoxManager GetKeyknoxManager(IPrivateKey privateKey, IPublicKey[] publicKeys){
+            Func<TokenContext, Task<string>> obtainToken = async (TokenContext tokenContext) =>
+              {
+                  var jwtFromServer = await EmulateServerResponseToBuildTokenRequest(tokenContext);
+                  return jwtFromServer;
+              };
+            var callBackProvider = new CallbackJwtProvider(obtainToken);
+            var manager = new KeyknoxManager(
+                callBackProvider, 
+                privateKey, 
+                publicKeys,
+                new KeyknoxClient(new NewtonsoftJsonSerializer(), ServiceTestData.ServiceAddress));
+            return manager;
+        }
+
+        public static KeyknoxManager GetKeyknoxManager()
+        {
+            var keypair = Crypto.GenerateKeys();
+            var keypair2 = Crypto.GenerateKeys();
+            return GetKeyknoxManager(
+                keypair.PrivateKey,
+                new IPublicKey[] { keypair.PublicKey, keypair2.PublicKey });
+        }
+
         private static string SomeHash(string identity)
         {
-            return String.IsNullOrWhiteSpace(identity) ? "my_default_identity" : identity;
+            return String.IsNullOrWhiteSpace(identity) ? Faker.Random.Guid().ToString() : identity;
         }
 
-        public static TokenContext PullTokenContext(){
-            return new TokenContext(null, "get", false, "keyknox");
+        public static TokenContext GetTokenContext(string identity){
+            return new TokenContext(identity, "get", false, "keyknox");
         }
 
-        public static TokenContext PushTokenContext()
-        {
-            return new TokenContext(null, "put", false, "keyknox");
-        }
-
-        public static TokenContext PushTokenContext1()
-        {
-            return new TokenContext(null, "put", false, "keyknox");
-        }
     }
 }

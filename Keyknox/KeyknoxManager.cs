@@ -67,7 +67,7 @@ namespace Keyknox
 
         public async Task<DecryptedKeyknoxValue> PushValueAsync(
             byte[] data,
-            byte[] previoushash)
+            byte[] previoushash = null)
         {
             var token = await this.accessTokenProvider.GetTokenAsync(new TokenContext(null, "put", false, "keyknox"));
             var detachedEncryptionResult = this.crypto.Encrypt(data, this.privateKey, this.publicKeys);
