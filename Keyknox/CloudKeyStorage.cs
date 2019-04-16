@@ -274,7 +274,7 @@ namespace Keyknox
                     return this.cloudKeyCache.Response;
                 }
 
-                var decryptedKeyknoxValue = await this.keyknoxManager.UpdateRecipientsAndPushValue(
+                var decryptedKeyknoxValue = await this.keyknoxManager.UpdateRecipientsAsync(
                     this.cloudKeyCache.Response.Value, this.cloudKeyCache.Response.KeyknoxHash, publicKeys, privateKey);
 
                 this.cloudKeyCache.Refresh(decryptedKeyknoxValue);

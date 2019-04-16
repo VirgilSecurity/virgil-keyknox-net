@@ -22,11 +22,11 @@ namespace Keyknox.Tests
                 Bytes.FromString(ServiceTestData.ApiPrivateKey, StringEncoding.BASE64));
         }
 
-        public static Func<TokenContext, Task<string>> GetObtainToken(double lifeTimeMin = 10)
+        public static Func<TokenContext, Task<string>> GetObtainToken(string defaultIdentity = null, double lifeTimeMin = 10)
         {
             Func<TokenContext, Task<string>> obtainToken = async (TokenContext tokenContext) =>
             {
-                var jwtFromServer = await EmulateServerResponseToBuildTokenRequest(tokenContext, lifeTimeMin);
+                var jwtFromServer = await EmulateServerResponseToBuildTokenRequest(tokenContext, defaultIdentity, lifeTimeMin);
 
                 return jwtFromServer;
             };
@@ -35,7 +35,7 @@ namespace Keyknox.Tests
         }
 
 
-        public static Task<string> EmulateServerResponseToBuildTokenRequest(TokenContext tokenContext, double lifeTimeMin = 5)
+        public static Task<string> EmulateServerResponseToBuildTokenRequest(TokenContext tokenContext, string defaultIdentity, double lifeTimeMin = 5)
         {
             var serverResponse = Task<string>.Factory.StartNew(() =>
             {
@@ -51,7 +51,7 @@ namespace Keyknox.Tests
                     TimeSpan.FromMinutes(lifeTimeMin),
                     new VirgilAccessTokenSigner()
                 );
-                var identity = SomeHash(tokenContext.Identity);
+                var identity = String.IsNullOrWhiteSpace(tokenContext.Identity) ? defaultIdentity : tokenContext.Identity;
                 return builder.GenerateToken(identity, data).ToString();
             }
             );
@@ -59,13 +59,8 @@ namespace Keyknox.Tests
             return serverResponse;
         }
 
-        public static KeyknoxManager GetKeyknoxManager(IPrivateKey privateKey, IPublicKey[] publicKeys){
-            Func<TokenContext, Task<string>> obtainToken = async (TokenContext tokenContext) =>
-              {
-                  var jwtFromServer = await EmulateServerResponseToBuildTokenRequest(tokenContext);
-                  return jwtFromServer;
-              };
-            var callBackProvider = new CallbackJwtProvider(obtainToken);
+        public static KeyknoxManager GetKeyknoxManager(IPrivateKey privateKey, IPublicKey[] publicKeys, string identity){
+            var callBackProvider = new CallbackJwtProvider(GetObtainToken(identity));
             var manager = new KeyknoxManager(
                 callBackProvider, 
                 privateKey, 
@@ -74,13 +69,14 @@ namespace Keyknox.Tests
             return manager;
         }
 
-        public static KeyknoxManager GetKeyknoxManager()
+        public static KeyknoxManager GetKeyknoxManager(string identity)
         {
             var keypair = Crypto.GenerateKeys();
             var keypair2 = Crypto.GenerateKeys();
             return GetKeyknoxManager(
                 keypair.PrivateKey,
-                new IPublicKey[] { keypair.PublicKey, keypair2.PublicKey });
+                new IPublicKey[] { keypair.PublicKey, keypair2.PublicKey },
+                identity);
         }
 
         private static string SomeHash(string identity)
@@ -91,6 +87,5 @@ namespace Keyknox.Tests
         public static TokenContext GetTokenContext(string identity){
             return new TokenContext(identity, "get", false, "keyknox");
         }
-
     }
 }

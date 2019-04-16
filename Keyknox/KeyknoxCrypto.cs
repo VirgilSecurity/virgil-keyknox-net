@@ -67,7 +67,11 @@ namespace Keyknox
             if ((encryptedKeyknoxValue.Meta == null || !encryptedKeyknoxValue.Meta.Any()) &&
                 (encryptedKeyknoxValue.Value == null || !encryptedKeyknoxValue.Value.Any()))
             {
-                return new DecryptedKeyknoxValue() { Value = new byte[0], Meta = new byte[0] };
+                return new DecryptedKeyknoxValue() { 
+                    Value = new byte[0],
+                    Meta = new byte[0],
+                    Version = encryptedKeyknoxValue.Version
+                };
             }
 
             ValidatePublicKeys(publicKeys);

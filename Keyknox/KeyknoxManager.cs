@@ -93,18 +93,35 @@ namespace Keyknox
             return decryptedKeyknoxVal;
         }
 
-        public async Task<DecryptedKeyknoxValue> UpdateRecipients(
+        public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(
             IPublicKey[] newPublicKeys,
             IPrivateKey newPrivateKey = null)
         {
-            if (newPublicKeys == null || !newPublicKeys.Any())
-            {
-                throw new KeyknoxException("Public key isn't provided");
-            }
+            CheckPublicKeys(newPublicKeys);
 
             var decryptedKeyknoxVal = await this.PullValueAsync();
-            if (decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
-                || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0)
+            if (IsEmpty(decryptedKeyknoxVal))
+            {
+                return decryptedKeyknoxVal;
+            }
+
+            this.privateKey = newPrivateKey ?? this.privateKey;
+            this.publicKeys = newPublicKeys;
+            return await this.PushValueAsync(decryptedKeyknoxVal.Value, decryptedKeyknoxVal.KeyknoxHash);
+        }
+
+
+        public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(
+            byte[] data,
+            byte[] previoushash,
+            IPublicKey[] newPublicKeys = null,
+            IPrivateKey newPrivateKey = null)
+        {
+            CheckPublicKeys(newPublicKeys);
+
+            var decryptedKeyknoxVal = await this.PullValueAsync();
+
+            if (IsEmpty(decryptedKeyknoxVal))
             {
                 return decryptedKeyknoxVal;
             }
@@ -112,18 +129,21 @@ namespace Keyknox
             this.privateKey = newPrivateKey ?? this.privateKey;
             this.publicKeys = newPublicKeys;
 
-            return await this.PushValueAsync(decryptedKeyknoxVal.Value, decryptedKeyknoxVal.KeyknoxHash);
+            return await this.PushValueAsync(data, previoushash);
         }
 
-        public async Task<DecryptedKeyknoxValue> UpdateRecipientsAndPushValue(
-            byte[] data,
-            byte[] previoushash,
-            IPublicKey[] newPublicKeys = null,
-            IPrivateKey newPrivateKey = null)
+        private bool IsEmpty(DecryptedKeyknoxValue decryptedKeyknoxVal)
         {
-            this.privateKey = newPrivateKey ?? this.privateKey;
-            this.publicKeys = newPublicKeys;
-            return await this.PushValueAsync(data, previoushash);
+            return (decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
+                     || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0);
+        }
+
+        private static void CheckPublicKeys(IPublicKey[] newPublicKeys)
+        {
+            if (newPublicKeys == null || !newPublicKeys.Any())
+            {
+                throw new KeyknoxException("Public key isn't provided");
+            }
         }
     }
 }

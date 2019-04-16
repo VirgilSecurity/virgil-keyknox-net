@@ -106,7 +106,7 @@ namespace Keyknox.Client
         {
             var request = this.NewRequest(method, endpoint, token);
 
-            var response = await this.client.SendAsync(request).ConfigureAwait(false);
+            var response = await this.client.SendAsync(request);
             return await this.TryParseModel(response);
         }
 
