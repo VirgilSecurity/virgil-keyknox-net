@@ -85,6 +85,7 @@ namespace Keyknox
             return new DecryptedKeyknoxValue()
             {
                 Value = decrypted,
+                Meta = encryptedKeyknoxValue.Meta,
                 Version = encryptedKeyknoxValue.Version,
                 KeyknoxHash = encryptedKeyknoxValue.KeyknoxHash
             };
