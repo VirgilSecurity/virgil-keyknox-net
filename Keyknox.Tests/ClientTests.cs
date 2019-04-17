@@ -17,7 +17,7 @@ namespace Keyknox.Tests
             
             this.keyknoxCrypto = new KeyknoxCrypto();
             this.faker = new Faker();
-            this.serviceTestData = new ServiceTestData("keyknox-stg");
+            this.serviceTestData = new ServiceTestData("keyknox-default");
             this.client = new KeyknoxClient(new NewtonsoftJsonSerializer(), this.serviceTestData.ServiceAddress);
         }
 
@@ -35,11 +35,11 @@ namespace Keyknox.Tests
             Assert.Equal("1.0", response.Version);
             Assert.NotNull(response.KeyknoxHash);
 
-            var pullSesponse = await client.PullValueAsync(token);
-            Assert.Equal(meta, pullSesponse.Meta);
-            Assert.Equal(data, pullSesponse.Value);
-            Assert.Equal("1.0", pullSesponse.Version);
-            Assert.Equal(response.KeyknoxHash, pullSesponse.KeyknoxHash);
+            var pullResponse = await client.PullValueAsync(token);
+            Assert.Equal(meta, pullResponse.Meta);
+            Assert.Equal(data, pullResponse.Value);
+            Assert.Equal("1.0", pullResponse.Version);
+            Assert.Equal(response.KeyknoxHash, pullResponse.KeyknoxHash);
 
 
              var resetResponse = await this.client.ResetValueAsync(token);

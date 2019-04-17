@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Remove="appsettings.json" />
+    <None Remove="Cloud.json" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">
@@ -28,6 +29,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Cloud.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

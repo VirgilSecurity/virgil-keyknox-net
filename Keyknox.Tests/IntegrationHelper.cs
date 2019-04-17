@@ -14,7 +14,7 @@ namespace Keyknox.Tests
     public class IntegrationHelper
     {
         public static VirgilCrypto Crypto = new VirgilCrypto();
-        public static ServiceTestData ServiceTestData = new ServiceTestData("keyknox-stg");
+        public static ServiceTestData ServiceTestData = new ServiceTestData("keyknox-default");
         public static Faker Faker = new Faker();
         public static IPrivateKey ApiPrivateKey()
         {
