@@ -50,8 +50,12 @@ namespace Keyknox.Utils
 
         public Dictionary<string, CloudEntry> Deserialize(byte[] data)
         {
-            var entries = this.jsonSerializer.Deserialize<List<CloudEntry>>(Bytes.ToString(data));
             var namedEntries = new Dictionary<string, CloudEntry>();
+            if (data == null || data.Length == 0){
+                return namedEntries;
+            }
+                
+            var entries = this.jsonSerializer.Deserialize<List<CloudEntry>>(Bytes.ToString(data));
             entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
             return namedEntries;
         }
