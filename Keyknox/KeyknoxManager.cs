@@ -62,7 +62,7 @@ namespace Keyknox
             this.accessTokenProvider = accessTokenProvider;
             this.privateKey = privateKey;
             this.publicKeys = publicKeys;
-            this.keyknoxClient = keyknoxClient ?? new KeyknoxClient(new NewtonsoftJsonSerializer());
+            this.keyknoxClient = keyknoxClient ?? new KeyknoxClient(new NewtonsoftJsonExtendedSerializer());
         }
 
         public async Task<DecryptedKeyknoxValue> PushValueAsync(

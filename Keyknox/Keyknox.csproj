@@ -8,7 +8,7 @@
     <Compile Remove="Class1.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Virgil.SDK" Version="5.0.6" />
     <PackageReference Include="Virgil.Crypto" Version="2.6.2" />
+    <PackageReference Include="Virgil.SDK" Version="5.0.7" />
   </ItemGroup>
 </Project>

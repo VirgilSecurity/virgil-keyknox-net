@@ -47,7 +47,7 @@ namespace Keyknox
 
         public CloudKeyCache(DecryptedKeyknoxValue keyknoxResponse, ICloudSerializer serializer = null)
         {
-            this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonSerializer());
+            this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonExtendedSerializer());
             this.Refresh(keyknoxResponse);
         }
 

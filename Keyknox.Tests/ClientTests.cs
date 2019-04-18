@@ -18,7 +18,7 @@ namespace Keyknox.Tests
             this.keyknoxCrypto = new KeyknoxCrypto();
             this.faker = new Faker();
             this.serviceTestData = new ServiceTestData("keyknox-default");
-            this.client = new KeyknoxClient(new NewtonsoftJsonSerializer(), this.serviceTestData.ServiceAddress);
+            this.client = new KeyknoxClient(new NewtonsoftJsonExtendedSerializer(), this.serviceTestData.ServiceAddress);
         }
 
         [Fact]

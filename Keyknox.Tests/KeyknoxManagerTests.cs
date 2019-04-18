@@ -417,7 +417,7 @@ namespace Keyknox.Tests
             Assert.Equal(data, pushedVal.Value);
 
             var client = new KeyknoxClient(
-                new NewtonsoftJsonSerializer(),
+                new NewtonsoftJsonExtendedSerializer(),
                 new ServiceTestData("keyknox-default").ServiceAddress);
 
             var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));

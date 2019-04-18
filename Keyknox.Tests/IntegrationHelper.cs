@@ -65,7 +65,7 @@ namespace Keyknox.Tests
                 callBackProvider, 
                 privateKey, 
                 publicKeys,
-                new KeyknoxClient(new NewtonsoftJsonSerializer(), ServiceTestData.ServiceAddress));
+                new KeyknoxClient(new NewtonsoftJsonExtendedSerializer(), ServiceTestData.ServiceAddress));
             return manager;
         }
 

@@ -63,7 +63,7 @@ namespace Keyknox
         {
             var localEntriesNames = this.localStorage.Names();
 
-            var cloudEntries = await this.cloudKeyStorage.RetrieveCloudEntries();
+            var cloudEntries = await this.cloudKeyStorage.RetrieveCloudEntriesAsync();
             var cloudEntriesNames = cloudEntries.Keys.ToList();
 
             var entriesToCompare = cloudEntriesNames.Intersect(localEntriesNames);

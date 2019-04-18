@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Keyknox.Utils;
+using Newtonsoft.Json.Linq;
 using Virgil.SDK.Common;
 using Xunit;
 
@@ -8,11 +9,11 @@ namespace Keyknox.Tests
 {
     public class EntrySerializerTest
     {
-        NewtonsoftJsonSerializer serializer;
+        NewtonsoftJsonExtendedSerializer serializer;
         CloudSerializer cloudSerializer;
         public EntrySerializerTest()
         {
-            this.serializer = new NewtonsoftJsonSerializer();
+            this.serializer = new NewtonsoftJsonExtendedSerializer();
             this.cloudSerializer = new CloudSerializer(this.serializer);
         }
 
@@ -21,19 +22,26 @@ namespace Keyknox.Tests
         { 
             var text = System.IO.File.ReadAllText("Cloud.json");
             var cloudTestData = serializer.Deserialize<Dictionary<string, dynamic>>(text);
+
             var cloudEntry = ParseEntry(cloudTestData, 1);
             var cloudEntry2 = ParseEntry(cloudTestData, 2);
             var entries = new Dictionary<string, CloudEntry>() {
                 { cloudEntry.Name, cloudEntry },
                 { cloudEntry2.Name, cloudEntry2 } };
             var serialized = cloudSerializer.Serialize(entries);
-            Assert.Equal(
-                cloudTestData["kExpectedResult"],
-                Bytes.ToString(serialized, StringEncoding.BASE64));
 
             var expectedResultBytes = Bytes.FromString(cloudTestData["kExpectedResult"], StringEncoding.BASE64);
             var deserialized = cloudSerializer.Deserialize(expectedResultBytes);
-            Assert.Equal(entries, deserialized);
+
+            Assert.Equal(entries.Count, deserialized.Count);
+
+            foreach (var entry in entries){
+                var deserializedEntry = deserialized[entry.Key];
+                Assert.Equal(entry.Value.CreationDate, deserializedEntry.CreationDate);
+                Assert.Equal(entry.Value.Data, deserializedEntry.Data);
+                Assert.Equal(entry.Value.ModificationDate, deserializedEntry.ModificationDate);
+                Assert.Equal(entry.Value.Meta, deserializedEntry.Meta);
+            }
         }
 
         [Fact]
@@ -42,7 +50,6 @@ namespace Keyknox.Tests
             var entriesList = cloudSerializer.Deserialize(new byte[0]);
             Assert.NotNull(entriesList);
             Assert.Empty(entriesList);
-
             entriesList = cloudSerializer.Deserialize(null);
 
             Assert.NotNull(entriesList);
@@ -51,19 +58,22 @@ namespace Keyknox.Tests
 
         private CloudEntry ParseEntry(Dictionary<string, dynamic> dict, int number)
         {
+            var meta = ((JObject)dict[$"kMeta{number}"])?.ToObject<Dictionary<string, string>>();
             return new CloudEntry()
             {
                 Name = dict[$"kName{number}"],
                 Data = Bytes.FromString(dict[$"kData{number}"], StringEncoding.BASE64),
-                Meta = dict[$"kMeta{number}"],
+                Meta = meta,
                 CreationDate = ParseDateTime(dict[$"kCreationDate{number}"]),
                 ModificationDate = ParseDateTime(dict[$"kModificationDate{number}"])
             };
         }
 
-        private DateTime ParseDateTime(Int64 str)
+        private DateTime ParseDateTime(long unixTimestamp)
         {
-            return DateTimeOffset.FromUnixTimeSeconds(str).DateTime;
+            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            long unixTimeStampInTicks = unixTimestamp / 1000 * TimeSpan.TicksPerSecond;
+            return new DateTime(epoch.Ticks + unixTimeStampInTicks);
         }
 
     }

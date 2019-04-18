@@ -54,11 +54,10 @@ namespace Keyknox
         private KeyknoxManager keyknoxManager;
         private ICloudSerializer serializer;
         private CloudKeyCache cloudKeyCache;
-
         public CloudKeyStorage(KeyknoxManager keyknoxManager, ICloudSerializer serializer = null)
         {
             this.keyknoxManager = keyknoxManager;
-            this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonSerializer());
+            this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonExtendedSerializer());
         }
 
         public CloudKeyStorage(
@@ -74,7 +73,7 @@ namespace Keyknox
             return this.cloudKeyCache != null && this.cloudKeyCache.Response != null;
         }
 
-        public async Task<Dictionary<string, CloudEntry>> RetrieveCloudEntries()
+        public async Task<Dictionary<string, CloudEntry>> RetrieveCloudEntriesAsync()
         {
             await SemaphoreSlim.WaitAsync();
             try
