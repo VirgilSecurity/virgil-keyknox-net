@@ -45,7 +45,7 @@ namespace Keyknox.Utils
 
         public CloudSerializer(IJsonSerializer jsonSerializer)
         {
-            this.jsonSerializer = jsonSerializer ?? new NewtonsoftJsonSerializer();
+            this.jsonSerializer = jsonSerializer ?? new NewtonsoftJsonExtendedSerializer();
         }
 
         public Dictionary<string, CloudEntry> Deserialize(byte[] data)
@@ -55,9 +55,7 @@ namespace Keyknox.Utils
                 return namedEntries;
             }
                 
-            var entries = this.jsonSerializer.Deserialize<List<CloudEntry>>(Bytes.ToString(data));
-            entries.ForEach(entry => namedEntries.Add(entry.Name, entry));
-            return namedEntries;
+           return this.jsonSerializer.Deserialize<Dictionary<string, CloudEntry>>(Bytes.ToString(data));
         }
 
         public byte[] Serialize(Dictionary<string, CloudEntry> entries)
