@@ -70,7 +70,8 @@ namespace Keyknox
                 return new DecryptedKeyknoxValue() { 
                     Value = new byte[0],
                     Meta = new byte[0],
-                    Version = encryptedKeyknoxValue.Version
+                    Version = encryptedKeyknoxValue.Version,
+                    KeyknoxHash = encryptedKeyknoxValue.KeyknoxHash
                 };
             }
 

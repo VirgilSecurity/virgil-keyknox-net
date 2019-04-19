@@ -64,17 +64,9 @@ namespace Keyknox.Tests
                 Name = dict[$"kName{number}"],
                 Data = Bytes.FromString(dict[$"kData{number}"], StringEncoding.BASE64),
                 Meta = meta,
-                CreationDate = ParseDateTime(dict[$"kCreationDate{number}"]),
-                ModificationDate = ParseDateTime(dict[$"kModificationDate{number}"])
+                CreationDate = UnixTimestampConverterInMilliseconds.TimeFromUnixTimestampInMilliseconds(dict[$"kCreationDate{number}"]),
+                ModificationDate = UnixTimestampConverterInMilliseconds.TimeFromUnixTimestampInMilliseconds(dict[$"kModificationDate{number}"])
             };
         }
-
-        private DateTime ParseDateTime(long unixTimestamp)
-        {
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            long unixTimeStampInTicks = unixTimestamp / 1000 * TimeSpan.TicksPerSecond;
-            return new DateTime(epoch.Ticks + unixTimeStampInTicks);
-        }
-
     }
 }

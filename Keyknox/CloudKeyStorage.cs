@@ -210,9 +210,9 @@ namespace Keyknox
                     {
                         Name = keyEntry.Name,
                         Data = keyEntry.Value,
-                        CreationDate = DateTime.UtcNow,
+                        CreationDate = DateTime.UtcNow.RoundTicks(),
                         Meta = (Dictionary<string, string>)keyEntry.Meta,
-                        ModificationDate = DateTime.UtcNow
+                        ModificationDate = DateTime.UtcNow.RoundTicks()
                     };
                     addedCloudEntries.Add(cloudEntry);
                     this.cloudKeyCache.Entries.Add(cloudEntry.Name, cloudEntry);
@@ -244,7 +244,7 @@ namespace Keyknox
                 }
 
                 var cloudEntry = this.cloudKeyCache.Entries[name];
-                cloudEntry.ModificationDate = DateTime.Now;
+                cloudEntry.ModificationDate = DateTime.Now.RoundTicks();
                 cloudEntry.Data = data;
                 cloudEntry.Meta = meta;
                 this.cloudKeyCache.Entries.Add(name, cloudEntry);

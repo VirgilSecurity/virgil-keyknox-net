@@ -34,11 +34,12 @@
 // POSSIBILITY OF SUCH DAMAGE.
 #endregion
 
-namespace Virgil.SDK.Common
+namespace Keyknox
 {
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using System;
+    using Virgil.SDK.Common;
 
     public class NewtonsoftJsonExtendedSerializer : NewtonsoftJsonSerializer
     {
@@ -65,14 +66,14 @@ namespace Virgil.SDK.Common
             writer.WriteRawValue(UnixTimestampInMillisecondsFromDateTime((DateTime)value).ToString());
         }
 
-        private static DateTime TimeFromUnixTimestampInMilliseconds(long unixTimestamp)
+        public static DateTime TimeFromUnixTimestampInMilliseconds(long unixTimestamp)
         {
-            return TimeFromUnixTimestamp(unixTimestamp / 1000);
+            return DateTimeOffset.FromUnixTimeMilliseconds(unixTimestamp).UtcDateTime;
         }
 
-        public static long UnixTimestampInMillisecondsFromDateTime(DateTime date)
+        public static long UnixTimestampInMillisecondsFromDateTime(DateTime dateTime)
         {
-            return UnixTimestampFromDateTime(date) * 1000;
+            return new DateTimeOffset(dateTime).ToUnixTimeMilliseconds();
         }
     }
 }
