@@ -36,6 +36,7 @@
 
 namespace Keyknox.Utils
 {
+    using System;
     using System.Collections.Generic;
     using Virgil.SDK.Common;
 
@@ -51,11 +52,22 @@ namespace Keyknox.Utils
         public Dictionary<string, CloudEntry> Deserialize(byte[] data)
         {
             var namedEntries = new Dictionary<string, CloudEntry>();
-            if (data == null || data.Length == 0){
+            if (data == null || data.Length == 0)
+            {
                 return namedEntries;
             }
-                
-           return this.jsonSerializer.Deserialize<Dictionary<string, CloudEntry>>(Bytes.ToString(data));
+
+            Dictionary<string, CloudEntry> entries;
+            try
+            {
+                entries = this.jsonSerializer.Deserialize<Dictionary<string, CloudEntry>>(Bytes.ToString(data));
+            }
+            catch (Exception exception)
+            {
+                throw new CloudSerializerException(exception.Message);
+            }
+
+            return entries;
         }
 
         public byte[] Serialize(Dictionary<string, CloudEntry> entries)

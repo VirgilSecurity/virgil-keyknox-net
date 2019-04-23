@@ -40,6 +40,7 @@ namespace Keyknox
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Keyknox.CloudKeyStorageException;
     using Virgil.SDK;
 
     public class SyncKeyStorage
@@ -59,7 +60,7 @@ namespace Keyknox
             this.localStorage = localStorage;
         }
 
-        public async Task Synchronize()
+        public async Task SynchronizeAsync()
         {
             var localEntriesNames = this.localStorage.Names();
 
@@ -90,7 +91,7 @@ namespace Keyknox
             var missingEntryNames = names.Except(localEntriesNames);
             if (missingEntryNames.Any())
             {
-                throw new KeyknoxException($"Entries missing: {string.Join(", ", missingEntryNames)}");
+                throw new MissingEntryException($"Entries are missing: {string.Join(", ", missingEntryNames)}");
             }
 
             foreach (var name in names)
@@ -132,7 +133,7 @@ namespace Keyknox
             this.DeleteLocalEntries(this.localStorage.Names());
         }
 
-        public async Task<KeyEntry> StoreEntry(string name, byte[] data, Dictionary<string, string> meta)
+        public async Task<KeyEntry> StoreEntryAsync(string name, byte[] data, Dictionary<string, string> meta)
         {
             this.ThrowExceptionIfNotSynchronized();
             var keyEntry = new KeyEntry() { Name = name, Meta = meta, Value = data };
@@ -148,12 +149,12 @@ namespace Keyknox
             {
                 if (localEntriesNames.Contains(entry.Name) || this.cloudKeyStorage.ExistsEntry(entry.Name))
                 {
-                    throw new KeyknoxException($"Entry already exists: #{entry.Name}");
+                    throw new NonUniqueEntryException($"Entry already exists: #{entry.Name}");
                 }
             }
 
             var keyEntries = new List<KeyEntry>();
-            var cloudEntries = await this.cloudKeyStorage.StoreEntries(entries);
+            var cloudEntries = await this.cloudKeyStorage.StoreEntriesAsync(entries);
 
             foreach (var entry in cloudEntries)
             {
@@ -194,12 +195,12 @@ namespace Keyknox
             foreach (var name in names)
             {
                 this.localStorage.Store(
-                    new KeyEntry 
-                {
-                    Value = cloudEntries[name].Data,
-                    Name = cloudEntries[name].Name,
-                    Meta = cloudEntries[name].Meta
-                });
+                    new KeyEntry
+                        {
+                            Value = cloudEntries[name].Data,
+                            Name = cloudEntries[name].Name,
+                            Meta = cloudEntries[name].Meta
+                        });
             }
         }
 
@@ -234,7 +235,7 @@ namespace Keyknox
         {
             if (!this.IsStorageSynchronized)
             {
-                throw new CloudStorageSyncException("Storage isn't synchronized.");
+                throw new SyncException("The cloud storage isn't synchronized.");
             }
         }
     }

@@ -100,7 +100,7 @@ namespace Keyknox
             CheckPublicKeys(newPublicKeys);
 
             var decryptedKeyknoxVal = await this.PullValueAsync();
-            if (IsEmpty(decryptedKeyknoxVal))
+            if (this.IsEmpty(decryptedKeyknoxVal))
             {
                 return decryptedKeyknoxVal;
             }
@@ -109,7 +109,6 @@ namespace Keyknox
             this.publicKeys = newPublicKeys;
             return await this.PushValueAsync(decryptedKeyknoxVal.Value, decryptedKeyknoxVal.KeyknoxHash);
         }
-
 
         public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(
             byte[] data,
@@ -121,7 +120,7 @@ namespace Keyknox
 
             var decryptedKeyknoxVal = await this.PullValueAsync();
 
-            if (IsEmpty(decryptedKeyknoxVal))
+            if (this.IsEmpty(decryptedKeyknoxVal))
             {
                 return decryptedKeyknoxVal;
             }
@@ -132,18 +131,18 @@ namespace Keyknox
             return await this.PushValueAsync(data, previoushash);
         }
 
-        private bool IsEmpty(DecryptedKeyknoxValue decryptedKeyknoxVal)
-        {
-            return (decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
-                     || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0);
-        }
-
         private static void CheckPublicKeys(IPublicKey[] newPublicKeys)
         {
             if (newPublicKeys == null || !newPublicKeys.Any())
             {
                 throw new KeyknoxException("Public key isn't provided");
             }
+        }
+
+        private bool IsEmpty(DecryptedKeyknoxValue decryptedKeyknoxVal)
+        {
+            return (decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
+                     || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0);
         }
     }
 }

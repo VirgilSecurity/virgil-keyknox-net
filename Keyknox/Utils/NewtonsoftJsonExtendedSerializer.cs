@@ -36,21 +36,21 @@
 
 namespace Keyknox
 {
+    using System;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
-    using System;
     using Virgil.SDK.Common;
 
     public class NewtonsoftJsonExtendedSerializer : NewtonsoftJsonSerializer
     {
         public NewtonsoftJsonExtendedSerializer()
         {
-            base.Settings = new JsonSerializerSettings
+            Settings = new JsonSerializerSettings
             {
                 NullValueHandling = NullValueHandling.Ignore
             };
 
-            base.Settings.Converters.Add(new UnixTimestampConverterInMilliseconds());
+            Settings.Converters.Add(new UnixTimestampConverterInMilliseconds());
         }
     }
 
@@ -58,20 +58,21 @@ namespace Keyknox
     {
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-            return reader.Value == null ? base.ReadJson(reader, objectType, existingValue, serializer) : TimeFromUnixTimestampInMilliseconds((long)reader.Value);
+            return reader.Value == null ? base.ReadJson(reader, objectType, existingValue, serializer) : DateTimeFrom((long)reader.Value);
         }
 
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            writer.WriteRawValue(UnixTimestampInMillisecondsFromDateTime((DateTime)value).ToString());
+            writer.WriteRawValue(UnixTimestampFrom((DateTime)value).ToString());
         }
 
-        public static DateTime TimeFromUnixTimestampInMilliseconds(long unixTimestamp)
+        public static DateTime DateTimeFrom(long unixTimestamp)
         {
+            // unixTimestamp is in milliseconds
             return DateTimeOffset.FromUnixTimeMilliseconds(unixTimestamp).UtcDateTime;
         }
 
-        public static long UnixTimestampInMillisecondsFromDateTime(DateTime dateTime)
+        public static long UnixTimestampFrom(DateTime dateTime)
         {
             return new DateTimeOffset(dateTime).ToUnixTimeMilliseconds();
         }

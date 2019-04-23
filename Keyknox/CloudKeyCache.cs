@@ -58,7 +58,7 @@ namespace Keyknox
         public void Refresh(DecryptedKeyknoxValue keyknoxResponse)
         {
             this.Response = keyknoxResponse;
-            this.Entries = serializer.Deserialize(this.Response.Value);
+            this.Entries = this.serializer.Deserialize(this.Response.Value);
         }
     }
 }

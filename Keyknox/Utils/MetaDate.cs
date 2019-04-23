@@ -41,18 +41,18 @@ namespace Keyknox
 
     public class MetaDate
     {
-        private const string format = "MMM ddd d HH:mm yyyy";
-        private const string modificationDateKey = "keyknox_upd";
-        private const string creationDateKey = "keyknox_crd";
+        private const string Format = "MMM ddd d HH:mm yyyy";
+        private const string ModificationDateKey = "keyknox_upd";
+        private const string CreationDateKey = "keyknox_crd";
 
         public static DateTime ExtractModificationDateFrom(Dictionary<string, string> meta)
         {
-            return DateTime.ParseExact(meta[modificationDateKey], format, null);
+            return DateTime.ParseExact(meta[ModificationDateKey], Format, null);
         }
 
         public static DateTime ExtractCreationDateFrom(Dictionary<string, string> meta)
         {
-            return DateTime.ParseExact(meta[creationDateKey], format, null);
+            return DateTime.ParseExact(meta[CreationDateKey], Format, null);
         }
 
         public static Dictionary<string, string> CopyAndAppendDatesTo(
@@ -61,8 +61,8 @@ namespace Keyknox
             DateTime modificationDate)
         {
             var meta = new Dictionary<string, string>(originalMeta);
-            meta.Add(modificationDateKey, modificationDate.ToString(format));
-            meta.Add(creationDateKey, creationDate.ToString(format));
+            meta.Add(ModificationDateKey, modificationDate.ToString(Format));
+            meta.Add(CreationDateKey, creationDate.ToString(Format));
 
             return meta;
         }

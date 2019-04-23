@@ -50,13 +50,10 @@ namespace Keyknox.Client
 
     public class HttpClientBase
     {
-        const string PreviousHashHeaderAlias = "Virgil-Keyknox-Previous-Hash";
-        const string HashHeaderAlias = "Virgil-Keyknox-Hash";
-
-
+        private const string PreviousHashHeaderAlias = "Virgil-Keyknox-Previous-Hash";
+        private const string HashHeaderAlias = "Virgil-Keyknox-Hash";
         private const string DefaultServiceUrl = "https://api.virgilsecurity.com/";
         private readonly IJsonSerializer serializer;
-
         private HttpClient client;
         private string virgilInfo;
 
@@ -90,12 +87,7 @@ namespace Keyknox.Client
             {
                 var serializedBody = this.serializer.Serialize(body);
                 request.Content = new StringContent(serializedBody, Encoding.UTF8, "application/json");
-                request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash ?? "");
-
-              //  if (body.KeyknoxHash != null)
-              //  {
-              //      request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash);
-              //  }
+                request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash ?? String.Empty);
             }
 
             var response = await this.client.SendAsync(request).ConfigureAwait(false);

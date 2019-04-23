@@ -10,5 +10,6 @@
   <ItemGroup>
     <PackageReference Include="Virgil.Crypto" Version="2.6.2" />
     <PackageReference Include="Virgil.SDK" Version="5.0.7" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
   </ItemGroup>
 </Project>

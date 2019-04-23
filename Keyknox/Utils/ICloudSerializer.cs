@@ -43,6 +43,5 @@ namespace Keyknox.Utils
         byte[] Serialize(Dictionary<string, CloudEntry> entries);
 
         Dictionary<string, CloudEntry> Deserialize(byte[] data);
-
     }
 }

@@ -41,6 +41,7 @@ namespace Keyknox
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Keyknox.CloudKeyStorageException;
     using Keyknox.Utils;
     using Virgil.CryptoAPI;
     using Virgil.SDK;
@@ -54,7 +55,10 @@ namespace Keyknox
         private KeyknoxManager keyknoxManager;
         private ICloudSerializer serializer;
         private CloudKeyCache cloudKeyCache;
-        public CloudKeyStorage(KeyknoxManager keyknoxManager, ICloudSerializer serializer = null)
+
+        public CloudKeyStorage(
+            KeyknoxManager keyknoxManager,
+            ICloudSerializer serializer = null)
         {
             this.keyknoxManager = keyknoxManager;
             this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonExtendedSerializer());
@@ -98,13 +102,13 @@ namespace Keyknox
             {
                 if (!this.cloudKeyCache.Entries.ContainsKey(name))
                 {
-                    throw new Exception("missing key");
+                    throw new MissingEntryException("missing key");
                 }
 
                 this.cloudKeyCache.Entries.Remove(name);
 
                 var decryptedKeyknoxVal = await this.keyknoxManager.PushValueAsync(
-                    serializer.Serialize(this.cloudKeyCache.Entries),
+                    this.serializer.Serialize(this.cloudKeyCache.Entries),
                     this.cloudKeyCache.Response.KeyknoxHash);
                 this.cloudKeyCache.Refresh(decryptedKeyknoxVal);
             }
@@ -116,13 +120,18 @@ namespace Keyknox
 
         public async Task DeteleAllAsync()
         {
-            this.ThrowExceptionIfNotSynchronized();
-
             await SemaphoreSlim.WaitAsync();
             try
             {
                 var decryptedKeyknoxVal = await this.keyknoxManager.ResetValueAsync();
-                this.cloudKeyCache.Refresh(decryptedKeyknoxVal);
+                if (this.cloudKeyCache != null)
+                {
+                    this.cloudKeyCache.Refresh(decryptedKeyknoxVal);
+                }
+                else
+                {
+                    this.cloudKeyCache = new CloudKeyCache(decryptedKeyknoxVal, this.serializer);
+                }
             }
             finally
             {
@@ -169,7 +178,7 @@ namespace Keyknox
             {
                 if (!this.cloudKeyCache.Entries.ContainsKey(name))
                 {
-                    throw new Exception("missing key");
+                     throw new MissingEntryException($"Can't find an entry with the name: {name}.");
                 }
 
                 return this.cloudKeyCache.Entries[name];
@@ -180,16 +189,16 @@ namespace Keyknox
             }
         }
 
-        public async Task<CloudEntry> Store(string name, byte[] data, Dictionary<string, string> meta)
+        public async Task<CloudEntry> StoreAsync(string name, byte[] data, Dictionary<string, string> meta)
         {
             this.ThrowExceptionIfNotSynchronized();
 
             var entry = new KeyEntry() { Name = name, Value = data, Meta = meta };
-            var stored = await this.StoreEntries(new List<KeyEntry> { entry });
+            var stored = await this.StoreEntriesAsync(new List<KeyEntry> { entry });
             return stored.First();
         }
 
-        public async Task<List<CloudEntry>> StoreEntries(List<KeyEntry> keyEntries)
+        public async Task<List<CloudEntry>> StoreEntriesAsync(List<KeyEntry> keyEntries)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -200,7 +209,7 @@ namespace Keyknox
             {
                 if (this.cloudKeyCache.Entries.Keys.Intersect(names).Any())
                 {
-                    throw new NotImplementedException();
+                    throw new NonUniqueEntryException("An entry with the same name already exists.");
                 }
 
                 var addedCloudEntries = new List<CloudEntry>();
@@ -240,14 +249,13 @@ namespace Keyknox
             {
                 if (!this.cloudKeyCache.Entries.ContainsKey(name))
                 {
-                    throw new NotImplementedException();
+                    throw new MissingEntryException($"Can't find an entry with the name: {name}.");
                 }
 
                 var cloudEntry = this.cloudKeyCache.Entries[name];
                 cloudEntry.ModificationDate = DateTime.Now.RoundTicks();
                 cloudEntry.Data = data;
                 cloudEntry.Meta = meta;
-                this.cloudKeyCache.Entries.Add(name, cloudEntry);
                 var decryptedKeyknoxVal = await this.keyknoxManager.PushValueAsync(
                     this.serializer.Serialize(this.cloudKeyCache.Entries),
                     this.cloudKeyCache.Response.KeyknoxHash);
@@ -261,7 +269,7 @@ namespace Keyknox
             }
         }
 
-        public async Task<DecryptedKeyknoxValue> UpdateRecipients(IPublicKey[] publicKeys, IPrivateKey privateKey)
+        public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(IPublicKey[] publicKeys, IPrivateKey privateKey)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -289,7 +297,7 @@ namespace Keyknox
         {
             if (!this.IsStorageSynchronized())
             {
-                throw new CloudStorageSyncException("Cloud storage isn't synchronized.");
+                throw new SyncException("The cloud storage isn't synchronized.");
             }
         }
     }
