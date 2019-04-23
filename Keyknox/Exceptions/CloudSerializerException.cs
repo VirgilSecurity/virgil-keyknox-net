@@ -36,14 +36,9 @@
 
 namespace Keyknox
 {
-    using System;
-
-    public class KeyknoxException : Exception
+    public class CloudSerializerException : KeyknoxException
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="KeyknoxException"/> class.
-        /// </summary>
-        public KeyknoxException(string message)
+        public CloudSerializerException(string message)
             : base(message)
         {
         }

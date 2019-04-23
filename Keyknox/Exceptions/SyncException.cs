@@ -34,16 +34,14 @@
  * Lead Maintainer: Virgil Security Inc. <support@virgilsecurity.com>
 */
 
-namespace Keyknox
+namespace Keyknox.CloudKeyStorageException
 {
-    using System;
-
-    public class KeyknoxException : Exception
+    public class SyncException : KeyknoxException
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="KeyknoxException"/> class.
+        /// Initializes a new instance of the <see cref="SyncException"/> class.
         /// </summary>
-        public KeyknoxException(string message)
+        public SyncException(string message)
             : base(message)
         {
         }
