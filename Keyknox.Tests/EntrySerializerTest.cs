@@ -64,8 +64,8 @@ namespace Keyknox.Tests
                 Name = dict[$"kName{number}"],
                 Data = Bytes.FromString(dict[$"kData{number}"], StringEncoding.BASE64),
                 Meta = meta,
-                CreationDate = UnixTimestampConverterInMilliseconds.TimeFromUnixTimestampInMilliseconds(dict[$"kCreationDate{number}"]),
-                ModificationDate = UnixTimestampConverterInMilliseconds.TimeFromUnixTimestampInMilliseconds(dict[$"kModificationDate{number}"])
+                CreationDate = UnixTimestampConverterInMilliseconds.DateTimeFrom(dict[$"kCreationDate{number}"]),
+                ModificationDate = UnixTimestampConverterInMilliseconds.DateTimeFrom(dict[$"kModificationDate{number}"])
             };
         }
     }

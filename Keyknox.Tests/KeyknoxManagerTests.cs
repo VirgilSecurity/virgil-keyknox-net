@@ -82,30 +82,14 @@ namespace Keyknox.Tests
                 lastPart,
                 identity);
 
-            await AssertException(newManager2);
-        }
 
-        private static async Task AssertException(KeyknoxManager newManager2)
-        {
-            //it doesnt work
-            //var ex = Record.ExceptionAsync(async () =>
-            //{
-            //    await newManager.PullValueAsync();
-            //});
-            //Assert.IsType<VirgilCryptoException>(ex);
-
-            var virgilCryptoExceptionRaised = false;
-            try
+            var ex = Record.ExceptionAsync(async () =>
             {
                 await newManager2.PullValueAsync();
-            }
-            catch (Exception exception)
-            {
-                Assert.IsType<VirgilCryptoException>(exception);
-                virgilCryptoExceptionRaised = true;
-            }
-            Assert.True(virgilCryptoExceptionRaised);
+            });
+            Assert.IsType<VirgilCryptoException>(await ex);
         }
+
 
         [Fact]
         public async Task KTC_10_PullValueWithSignerInTrustedPubKeys()
@@ -144,18 +128,11 @@ namespace Keyknox.Tests
                prevPart,
                identity);
 
-
-            var virgilCryptoExceptionRaised = false;
-            try
+            var ex = Record.ExceptionAsync(async () =>
             {
                 await newManager3.PullValueAsync();
-            }
-            catch (Exception exception)
-            {
-                Assert.IsType<VirgilCryptoException>(exception);
-                virgilCryptoExceptionRaised = true;
-            }
-            Assert.True(virgilCryptoExceptionRaised);
+            });
+            Assert.IsType<VirgilCryptoException>(await ex);
         }
 
         [Fact]
@@ -210,34 +187,23 @@ namespace Keyknox.Tests
                lastPart,
                identity);
 
-            var virgilCryptoExceptionRaised = false;
-            try
+            var ex = Record.ExceptionAsync(async () =>
             {
                 await newManager4.PullValueAsync();
-            }
-            catch (Exception exception)
-            {
-                Assert.IsType<VirgilCryptoException>(exception);
-                virgilCryptoExceptionRaised = true;
-            }
-            Assert.True(virgilCryptoExceptionRaised);
+            });
+            Assert.IsType<VirgilCryptoException>(await ex);
+
 
             var newManager5 = IntegrationHelper.GetKeyknoxManager(
               keyPairs[rand.Next(25, 50)].PrivateKey,
               prevPart,
               identity);
 
-            virgilCryptoExceptionRaised = false;
-            try
+             ex = Record.ExceptionAsync(async () =>
             {
                 await newManager5.PullValueAsync();
-            }
-            catch (Exception exception)
-            {
-                Assert.IsType<VirgilCryptoException>(exception);
-                virgilCryptoExceptionRaised = true;
-            }
-            Assert.True(virgilCryptoExceptionRaised);
+            });
+            Assert.IsType<VirgilCryptoException>(await ex);
         }
 
         [Fact]
@@ -296,34 +262,22 @@ namespace Keyknox.Tests
                lastPart,
                identity);
 
-            var virgilCryptoExceptionRaised = false;
-            try
+            var ex = Record.ExceptionAsync(async () =>
             {
                 await newManager4.PullValueAsync();
-            }
-            catch (Exception exception)
-            {
-                Assert.IsType<VirgilCryptoException>(exception);
-                virgilCryptoExceptionRaised = true;
-            }
-            Assert.True(virgilCryptoExceptionRaised);
+            });
+            Assert.IsType<VirgilCryptoException>(await ex);
 
             var newManager5 = IntegrationHelper.GetKeyknoxManager(
               keyPairs[rand.Next(25, 50)].PrivateKey,
               prevPart,
               identity);
 
-            virgilCryptoExceptionRaised = false;
-            try
+            ex = Record.ExceptionAsync(async () =>
             {
                 await newManager5.PullValueAsync();
-            }
-            catch (Exception exception)
-            {
-                Assert.IsType<VirgilCryptoException>(exception);
-                virgilCryptoExceptionRaised = true;
-            }
-            Assert.True(virgilCryptoExceptionRaised);
+            });
+            Assert.IsType<VirgilCryptoException>(await ex);
         }
 
 
