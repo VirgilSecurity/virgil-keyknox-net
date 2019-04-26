@@ -1,5 +1,4 @@
-﻿
-namespace Keyknox.Tests
+﻿namespace Keyknox.Tests
 {
     using System;
     using System.Collections.Generic;
@@ -16,10 +15,9 @@ namespace Keyknox.Tests
     using Virgil.SDK.Web.Authorization;
     using Xunit;
 
-
     public class CloudKeyStorageTests
     {
-        Faker faker;
+        private Faker faker;
         public CloudKeyStorageTests()
         {
             this.faker = new Faker();
@@ -28,7 +26,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_19_RetrieveEmpty()
         {
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var storage = new CloudKeyStorage(IntegrationHelper.GetKeyknoxManager(identity));
             await storage.RetrieveCloudEntriesAsync();
             var entries = storage.RetrieveAllEntries();
@@ -38,16 +36,18 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_20_Store()
         {
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
 
             var storage = new CloudKeyStorage(newManager);
             await storage.RetrieveCloudEntriesAsync();
             var data = this.faker.Random.Bytes(10);
 
-            var name = faker.Name.FullName();
-            var meta = new Dictionary<string, string>() {
+            var name = this.faker.Name.FullName();
+            var meta = new Dictionary<string, string>()
+            {
                 { "key1", "value1" },
                 { "key2", "value2" }};
+            
             var entry = await storage.StoreAsync(name, data, meta);
 
             var entries = storage.RetrieveAllEntries();
@@ -62,21 +62,22 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_21_Store()
         {
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
 
             var storage = new CloudKeyStorage(newManager);
             await storage.RetrieveCloudEntriesAsync();
             var data = this.faker.Random.Bytes(10);
 
-            var name = faker.Name.FullName();
+            var name = this.faker.Name.FullName();
             var meta = new Dictionary<string, string>() {
                 { "key1", "value1" },
                 { "key2", "value2" }};
+            
             var entry = await storage.StoreAsync(name, data, meta);
 
             Assert.True(storage.ExistsEntry(name));
 
-            var nameOfMissingEntry = faker.Name.FullName();
+            var nameOfMissingEntry = this.faker.Name.FullName();
             Assert.False(storage.ExistsEntry(nameOfMissingEntry));
 
             var entries = storage.RetrieveAllEntries();
@@ -87,11 +88,12 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_22_Store()
         {
-            var name = faker.Name.FullName();
+            var name = this.faker.Name.FullName();
             var keyEntries = new List<KeyEntry>();
             for (int i = 0; i < 100; i++)
             {
-                var entry1 = new KeyEntry(){
+                var entry1 = new KeyEntry()
+                {
                     Name = $"{name}-{i}",
                     Value = BitConverter.GetBytes(i),
                     Meta = new Dictionary<string, string>() { { "key1", "value1" } }
@@ -99,14 +101,15 @@ namespace Keyknox.Tests
                 keyEntries.Add(entry1);
             }
 
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
 
             var storage = new CloudKeyStorage(newManager);
             await storage.RetrieveCloudEntriesAsync();
             await storage.StoreEntriesAsync(new List<KeyEntry> { keyEntries[0] });
             await storage.StoreEntriesAsync(keyEntries.GetRange(1, 98));
 
-            foreach (KeyEntry entry in keyEntries.GetRange(0, 98)){
+            foreach (KeyEntry entry in keyEntries.GetRange(0, 98))
+            {
                 var cloudEntry = storage.RetrieveEntry(entry.Name);
                 Assert.Equal(entry.Value, cloudEntry.Data);
                 Assert.Equal(entry.Meta, cloudEntry.Meta);
@@ -134,11 +137,10 @@ namespace Keyknox.Tests
             }
         }
 
-
         [Fact]
         public async Task KTC_23_Store()
         {
-            var name = faker.Name.FullName();
+            var name = this.faker.Name.FullName();
             var keyEntries = new List<KeyEntry>();
             for (int i = 0; i < 100; i++)
             {
@@ -151,11 +153,10 @@ namespace Keyknox.Tests
                 keyEntries.Add(entry1);
             }
 
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
             var storage = new CloudKeyStorage(newManager);
             var cloudEntries = await storage.RetrieveCloudEntriesAsync();
             Assert.True(cloudEntries.Count == 0);
-
 
             await storage.StoreEntriesAsync(keyEntries);
            
@@ -169,11 +170,10 @@ namespace Keyknox.Tests
             Assert.Empty(retrievedEntries);
         }
 
-
         [Fact]
         public async Task KTC_24_Store()
         {
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
             var storage = new CloudKeyStorage(newManager);
             Assert.Empty(await storage.RetrieveCloudEntriesAsync());
 
@@ -185,7 +185,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_25_Store()
         {
-            var name = faker.Name.FullName();
+            var name = this.faker.Name.FullName();
             var keyEntries = new List<KeyEntry>();
             for (int i = 0; i < 10; i++)
             {
@@ -198,11 +198,11 @@ namespace Keyknox.Tests
                 keyEntries.Add(entry1);
             }
 
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
 
             var storage = new CloudKeyStorage(newManager);
             await storage.RetrieveCloudEntriesAsync();
-            await storage.StoreEntriesAsync( keyEntries );
+            await storage.StoreEntriesAsync(keyEntries);
 
             foreach (KeyEntry entry in keyEntries)
             {
@@ -239,7 +239,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_26_Store()
         {
-            var name = faker.Name.FullName();
+            var name = this.faker.Name.FullName();
             var keyEntries = new List<KeyEntry>();
             for (int i = 0; i < 10; i++)
             {
@@ -252,7 +252,7 @@ namespace Keyknox.Tests
                 keyEntries.Add(entry1);
             }
 
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
 
             var storage = new CloudKeyStorage(newManager);
             await storage.RetrieveCloudEntriesAsync();
@@ -292,7 +292,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_27_Store()
         {
-            var name = faker.Name.FullName();
+            var name = this.faker.Name.FullName();
             var keyEntries = new List<KeyEntry>();
             for (int i = 0; i < 10; i++)
             {

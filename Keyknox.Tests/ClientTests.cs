@@ -1,20 +1,20 @@
-﻿using System.Threading.Tasks;
-using Bogus;
-using Keyknox.Client;
-using Virgil.SDK.Common;
-using Xunit;
-
-namespace Keyknox.Tests
+﻿namespace Keyknox.Tests
 {
+    using System.Threading.Tasks;
+    using Bogus;
+    using Keyknox.Client;
+    using Virgil.SDK.Common;
+    using Xunit;
+
     public class ClientTests
     {
-        KeyknoxCrypto keyknoxCrypto;
-        Faker faker;
-        ServiceTestData serviceTestData;
-        KeyknoxClient client;
+        private KeyknoxCrypto keyknoxCrypto;
+        private Faker faker;
+        private ServiceTestData serviceTestData;
+        private KeyknoxClient client;
+
         public ClientTests()
         {
-            
             this.keyknoxCrypto = new KeyknoxCrypto();
             this.faker = new Faker();
             this.serviceTestData = new ServiceTestData("keyknox-default");
@@ -24,7 +24,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_1_PullValue()
         {
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
             var meta = this.faker.Random.Bytes(5);
             var data = this.faker.Random.Bytes(10);
@@ -35,12 +35,11 @@ namespace Keyknox.Tests
             Assert.Equal("1.0", response.Version);
             Assert.NotNull(response.KeyknoxHash);
 
-            var pullResponse = await client.PullValueAsync(token);
+            var pullResponse = await this.client.PullValueAsync(token);
             Assert.Equal(meta, pullResponse.Meta);
             Assert.Equal(data, pullResponse.Value);
             Assert.Equal("1.0", pullResponse.Version);
             Assert.Equal(response.KeyknoxHash, pullResponse.KeyknoxHash);
-
 
              var resetResponse = await this.client.ResetValueAsync(token);
              Assert.Empty(resetResponse.Meta);
@@ -52,10 +51,10 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_3_PullEmptyValue()
         {
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
 
-            var pullResponse = await client.PullValueAsync(token);
+            var pullResponse = await this.client.PullValueAsync(token);
             Assert.Equal("1.0", pullResponse.Version);
             Assert.Empty(pullResponse.Meta);
             Assert.Empty(pullResponse.Value);
@@ -64,7 +63,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_4_ResetValue()
         {
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
             var meta = this.faker.Random.Bytes(5);
             var data = this.faker.Random.Bytes(10);
@@ -85,7 +84,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_5_ResetEmptyValue()
         {
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
 
             var resetResponse = await this.client.ResetValueAsync(token);
@@ -98,7 +97,7 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_2_UpdateValue()
         {
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
             var meta = this.faker.Random.Bytes(5);
             var data = this.faker.Random.Bytes(10);
