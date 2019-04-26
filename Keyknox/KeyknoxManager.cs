@@ -141,8 +141,8 @@ namespace Keyknox
 
         private bool IsEmpty(DecryptedKeyknoxValue decryptedKeyknoxVal)
         {
-            return (decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
-                     || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0);
+            return decryptedKeyknoxVal.Meta == null || decryptedKeyknoxVal.Meta.Length == 0
+                     || decryptedKeyknoxVal.Value == null || decryptedKeyknoxVal.Value.Length == 0;
         }
     }
 }

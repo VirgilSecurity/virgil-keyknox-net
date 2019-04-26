@@ -189,7 +189,7 @@ namespace Keyknox
             }
         }
 
-        public async Task<CloudEntry> StoreAsync(string name, byte[] data, Dictionary<string, string> meta)
+        public async Task<CloudEntry> StoreAsync(string name, byte[] data, IDictionary<string, string> meta)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -220,7 +220,7 @@ namespace Keyknox
                         Name = keyEntry.Name,
                         Data = keyEntry.Value,
                         CreationDate = DateTime.UtcNow.RoundTicks(),
-                        Meta = (Dictionary<string, string>)keyEntry.Meta,
+                        Meta = keyEntry.Meta,
                         ModificationDate = DateTime.UtcNow.RoundTicks()
                     };
                     addedCloudEntries.Add(cloudEntry);
@@ -240,7 +240,7 @@ namespace Keyknox
             }
         }
 
-        public async Task<CloudEntry> UpdateEntryAsync(string name, byte[] data, Dictionary<string, string> meta = null)
+        public async Task<CloudEntry> UpdateEntryAsync(string name, byte[] data, IDictionary<string, string> meta = null)
         {
             this.ThrowExceptionIfNotSynchronized();
 
