@@ -56,6 +56,6 @@ namespace Keyknox
         public DateTime ModificationDate { get; set; }
 
         [DataMember(Name = "meta", EmitDefaultValue = false)]
-        public Dictionary<string, string> Meta { get; set; }
+        public IDictionary<string, string> Meta { get; set; }
     }
 }
