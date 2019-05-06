@@ -45,53 +45,92 @@ namespace Keyknox
     using Virgil.SDK;
     using Virgil.SDK.Web.Authorization;
 
+    /// <summary>
+    /// Synchronizes data between cloud and local storage.
+    /// </summary>
     public class SyncKeyStorage
     {
-        private CloudKeyStorage cloudStorage;
-        private LocalKeyStorage localStorage;
+        private ICloudKeyStorage cloudStorage;
+        private ILocalKeyStorage localStorage;
         private bool isStorageSynchronized;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.SyncKeyStorage"/> class.
+        /// </summary>
+        /// <param name="identity">User's identity to group keys in local storage.</param>
+        /// <param name="cloudKeyStorage">A cloud key storage.</param>
+        /// <param name="localStorage">A local storage.</param>
         public SyncKeyStorage(
             string identity,
-            CloudKeyStorage cloudKeyStorage,
-            LocalKeyStorage localStorage)
+            ICloudKeyStorage cloudKeyStorage,
+            ILocalKeyStorage localStorage)
         {
-            this.Identity = identity;
-            this.cloudStorage = cloudKeyStorage;
-            this.localStorage = localStorage;
+            this.Identity = identity ?? throw new ArgumentNullException(nameof(identity));
+            this.cloudStorage = cloudKeyStorage ?? throw new ArgumentNullException(nameof(cloudKeyStorage));
+            this.localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
         }
 
 #if OSX
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.SyncKeyStorage"/> class.
+        /// </summary>
+        /// <param name="identity">User's identity to group keys in local storage.</param>
+        /// <param name="accessTokenProvider">Access token provider for getting Access Token.</param>
+        /// <param name="publicKeys">Public keys for ecnryption and signature verification.</param>
+        /// <param name="privateKey">Private key for decryption and signature generation.</param>
         public SyncKeyStorage(
             string identity,
             IAccessTokenProvider accessTokenProvider,
             IPrivateKey privateKey,
             IPublicKey[] publicKeys)
+            : this(
+                identity,
+                new CloudKeyStorage(accessTokenProvider, privateKey, publicKeys),
+                new LocalKeyStorage(identity))
         {
-            this.Identity = identity;
-            this.cloudStorage = new CloudKeyStorage(accessTokenProvider, privateKey, publicKeys);
-            this.localStorage = new LocalKeyStorage(identity);
         }
-#else
+
+        #else
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.SyncKeyStorage"/> class.
+        /// </summary>
+        /// <param name="identity">User's identity to group by in local storage.</param>
+        /// <param name="accessTokenProvider">Access token provider.</param>
+        /// <param name="password">Password for local storage.
+        /// Should be specified for implementation on Windows, Linux or Android.</param>
+        /// <param name="publicKeys">New public keys for ecnryption and signature verification.</param>
+        /// <param name="privateKey">New private key for decryption and signature generation.</param>
         public SyncKeyStorage(
             string identity,
             string password,
             IAccessTokenProvider accessTokenProvider,
             IPrivateKey privateKey,
             IPublicKey[] publicKeys)
+        : this(
+                identity,
+                new CloudKeyStorage(accessTokenProvider, privateKey, publicKeys),
+                new LocalKeyStorage(password, identity))
         {
-            this.identity = identity;
-            this.cloudStorage = new CloudKeyStorage(accessTokenProvider, privateKey, publicKeys);
-            this.localStorage = new LocalKeyStorage(password, identity);
+           
         }
 #endif
+
+        /// <summary>
+        /// User's identity to group by in local storage.
+        /// </summary>
+        /// <value>The identity.</value>
         public string Identity { get; private set; }
 
+        /// <summary>
+        /// Synchronizes data between Keyknox Cloud and local storage.
+        /// </summary>
+        /// <returns>The async.</returns>
         public async Task SynchronizeAsync()
         {
             var localEntriesNames = this.localStorage.Names();
 
-            var cloudEntries = await this.cloudStorage.RetrieveCloudEntriesAsync();
+            var cloudEntries = await this.cloudStorage.UploadAllAsync();
             var cloudEntriesNames = cloudEntries.Keys.ToList();
 
             var entriesToCompare = cloudEntriesNames.Intersect(localEntriesNames);
@@ -105,15 +144,29 @@ namespace Keyknox
             this.isStorageSynchronized = true;
         }
 
-        public KeyEntry RetrieveEntry(string name)
+        /// <summary>
+        /// Retrieves the synchronized entry.
+        /// </summary>
+        /// <returns>The stored key entry.</returns>
+        /// <param name="name">Key entry name.</param>
+        public KeyEntry Retrieve(string name)
         {
             this.ThrowExceptionIfNotSynchronized();
-            return this.localStorage.Load(name);
+            return this.localStorage.Load(name ?? throw new ArgumentNullException(nameof(name)));
         }
 
-        public async Task DeleteEntriesAsync(List<string> names)
+        /// <summary>
+        /// Deletes the synchronized entries from the cloud and the local storage.
+        /// </summary>
+        /// <param name="names">Names.</param>
+        public async Task DeleteAsync(List<string> names)
         {
             this.ThrowExceptionIfNotSynchronized();
+            if (!names.Any())
+            {
+                throw new ArgumentException($"empty {nameof(names)}.");
+            }
+
             var localEntriesNames = new List<string>(this.localStorage.Names());
             var missingEntryNames = names.Except(localEntriesNames);
             if (missingEntryNames.Any())
@@ -123,18 +176,27 @@ namespace Keyknox
 
             foreach (var name in names)
             {
-                await this.cloudStorage.DeteleEntryAsync(name);
+                await this.cloudStorage.DeteleAsync(name);
                 this.localStorage.Delete(name);
             }
         }
 
-        public bool ExistsEntry(string name)
+        /// <summary>
+        /// Checks if entry with the specified name exists in synchronized local storage.
+        /// </summary>
+        /// <returns>True if exists.</returns>
+        /// <param name="name">Entry name.</param>
+        public bool Exists(string name)
         {
             this.ThrowExceptionIfNotSynchronized();
-            return this.localStorage.Exists(name);
+            return this.localStorage.Exists(name ?? throw new ArgumentNullException(nameof(name)));
         }
 
-        public List<KeyEntry> RetrieveAllEntries()
+        /// <summary>
+        /// Retrieves all entries from synchronized local storage.
+        /// </summary>
+        /// <returns>The all entries.</returns>
+        public List<KeyEntry> RetrieveAll()
         {
             this.ThrowExceptionIfNotSynchronized();
             var localEntriesNames = this.localStorage.Names();
@@ -148,54 +210,98 @@ namespace Keyknox
             return keyEntries;
         }
 
-        public async Task DeleteEntryAsync(string name)
+        /// <summary>
+        /// Deletes entry with the specified name from the cloud and the local storage.
+        /// </summary>
+        /// <param name="name">Entry name.</param>
+        public async Task DeleteAsync(string name)
         {
             this.ThrowExceptionIfNotSynchronized();
-            await this.DeleteEntriesAsync(new List<string>() { name });
+            await this.DeleteAsync(new List<string>() { name ?? throw new ArgumentNullException(nameof(name)) });
         }
 
-        public async Task DeleteAllEntriesAsync()
+        /// <summary>
+        /// Deletes all from the cloud and the local storage.
+        /// </summary>
+        public async Task DeleteAllAsync()
         {
             this.ThrowExceptionIfNotSynchronized();
             await this.cloudStorage.DeteleAllAsync();
             this.DeleteLocalEntries(this.localStorage.Names());
         }
 
-        public async Task<KeyEntry> StoreEntryAsync(string name, byte[] data, IDictionary<string, string> meta)
+        /// <summary>
+        /// Stores an entry with the specified name, data and meta.
+        /// </summary>
+        /// <returns>The saved key entry.</returns>
+        /// <param name="name">Entry name.</param>
+        /// <param name="data">Data to be stored.</param>
+        /// <param name="meta">Meta to be stored.</param>
+        public async Task<KeyEntry> StoreAsync(string name, byte[] data, IDictionary<string, string> meta)
         {
             this.ThrowExceptionIfNotSynchronized();
-            var storedEntries = await this.StoreEntriesAsync(
-                new List<KeyEntry>() { new KeyEntry() { Name = name, Meta = meta, Value = data } });
+            var storedEntries = await this.StoreAsync(
+                new List<KeyEntry>()
+                {
+                    new KeyEntry()
+                    {
+                        Name = name ?? throw new ArgumentNullException(nameof(name)),
+                        Meta = meta,
+                        Value = data ?? throw new ArgumentNullException(nameof(data))
+                    }
+                });
             return storedEntries.First();
         }
 
-        public async Task<KeyEntry> UpdateEntryAsync(string name, byte[] data, IDictionary<string, string> meta)
+        /// <summary>
+        /// Updates a key entry with the specified name.
+        /// </summary>
+        /// <returns>The updated key entry.</returns>
+        /// <param name="name">Name of entry to be updated.</param>
+        /// <param name="data">New data to be stored in the entry with the specified name.</param>
+        /// <param name="meta">New meta to be stored in the entry with the specified name.</param>
+        public async Task<KeyEntry> UpdateAsync(string name, byte[] data, IDictionary<string, string> meta)
         {
             this.ThrowExceptionIfNotSynchronized();
-            if (!this.localStorage.Exists(name) || !this.cloudStorage.ExistsEntry(name))
+            if (name == null)
+            {
+                throw new ArgumentNullException(nameof(name));
+            }
+
+            if (!this.localStorage.Exists(name) || !this.cloudStorage.Exists(name))
             {
                 throw new MissingEntryException($"Entry is missing: {name}");
             }
 
-            await this.cloudStorage.UpdateEntryAsync(name, data, meta);
+            await this.cloudStorage.UpdateAsync(name, data, meta);
             this.localStorage.Delete(name);
-            return this.CloneFromCloudToLocal(await this.cloudStorage.UpdateEntryAsync(name, data, meta));
+            return this.CloneFromCloudToLocal(await this.cloudStorage.UpdateAsync(name, data, meta));
         }
 
-        public async Task<List<KeyEntry>> StoreEntriesAsync(List<KeyEntry> entries)
+        /// <summary>
+        /// Stores the specified entries.
+        /// </summary>
+        /// <returns>Saved entries.</returns>
+        /// <param name="entries">Entries to be stored.</param>
+        public async Task<List<KeyEntry>> StoreAsync(List<KeyEntry> entries)
         {
+            if (entries == null || !entries.Any())
+            {
+                throw new ArgumentException($"empty {nameof(entries)}.");
+            }
+
             this.ThrowExceptionIfNotSynchronized();
             var localEntriesNames = new List<string>(this.localStorage.Names());
             foreach (var entry in entries)
             {
-                if (localEntriesNames.Contains(entry.Name) || this.cloudStorage.ExistsEntry(entry.Name))
+                if (localEntriesNames.Contains(entry.Name) || this.cloudStorage.Exists(entry.Name))
                 {
                     throw new NonUniqueEntryException($"Entry already exists: #{entry.Name}");
                 }
             }
 
             var keyEntries = new List<KeyEntry>();
-            var cloudEntries = await this.cloudStorage.StoreEntriesAsync(entries);
+            var cloudEntries = await this.cloudStorage.StoreAsync(entries);
 
             foreach (var entry in cloudEntries)
             {
@@ -206,6 +312,12 @@ namespace Keyknox
             return keyEntries;
         }
 
+        /// <summary>
+        /// Updates public keys for ecnryption and signature verification
+        /// and private key for decryption and signature generation
+        /// </summary>
+        /// <param name="publicKeys">New public keys for ecnryption and signature verification.</param>
+        /// <param name="privateKey">New private key for decryption and signature generation.</param>
         public async Task UpdateRecipientsAsync(IPublicKey[] publicKeys, IPrivateKey privateKey)
         {
             await this.cloudStorage.UpdateRecipientsAsync(publicKeys, privateKey);
@@ -256,7 +368,7 @@ namespace Keyknox
 
                 if (modificationDate > cloudEntry.ModificationDate)
                 {
-                    await this.cloudStorage.UpdateEntryAsync(
+                    await this.cloudStorage.UpdateAsync(
                         name,
                         localKeyEntry.Value,
                         localKeyEntry.Meta);
