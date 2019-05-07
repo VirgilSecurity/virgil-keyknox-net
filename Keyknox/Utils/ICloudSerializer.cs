@@ -40,8 +40,18 @@ namespace Keyknox.Utils
 
     public interface ICloudSerializer
     {
+        /// <summary>
+        /// Serialize the specified cloud entries.
+        /// </summary>
+        /// <returns>Serialized cloud entries in bytes.</returns>
+        /// <param name="entries">Entries to be serialized.</param>
         byte[] Serialize(Dictionary<string, CloudEntry> entries);
 
+        /// <summary>
+        /// Deserialize the specified data to cloud entries.
+        /// </summary>
+        /// <returns>Cloud entries.</returns>
+        /// <param name="data">Bytes to be deserialized to cloud entries.</param>
         Dictionary<string, CloudEntry> Deserialize(byte[] data);
     }
 }

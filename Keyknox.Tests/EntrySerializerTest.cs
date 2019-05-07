@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using Keyknox.Utils;
-using Newtonsoft.Json.Linq;
-using Virgil.SDK.Common;
-using Xunit;
-
-namespace Keyknox.Tests
+﻿namespace Keyknox.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using Keyknox.Utils;
+    using Newtonsoft.Json.Linq;
+    using Virgil.SDK.Common;
+    using Xunit;
+
     public class EntrySerializerTest
     {
-        NewtonsoftJsonExtendedSerializer serializer;
-        CloudSerializer cloudSerializer;
+        private NewtonsoftJsonExtendedSerializer serializer;
+        private CloudSerializer cloudSerializer;
+
         public EntrySerializerTest()
         {
             this.serializer = new NewtonsoftJsonExtendedSerializer();
@@ -21,21 +22,24 @@ namespace Keyknox.Tests
         public void KTC_17()
         { 
             var text = System.IO.File.ReadAllText("Cloud.json");
-            var cloudTestData = serializer.Deserialize<Dictionary<string, dynamic>>(text);
+            var cloudTestData = this.serializer.Deserialize<Dictionary<string, dynamic>>(text);
 
-            var cloudEntry = ParseEntry(cloudTestData, 1);
-            var cloudEntry2 = ParseEntry(cloudTestData, 2);
-            var entries = new Dictionary<string, CloudEntry>() {
+            var cloudEntry = this.ParseEntry(cloudTestData, 1);
+            var cloudEntry2 = this.ParseEntry(cloudTestData, 2);
+            var entries = new Dictionary<string, CloudEntry>()
+            {
                 { cloudEntry.Name, cloudEntry },
-                { cloudEntry2.Name, cloudEntry2 } };
-            var serialized = cloudSerializer.Serialize(entries);
+                { cloudEntry2.Name, cloudEntry2 }
+            };
+            var serialized = this.cloudSerializer.Serialize(entries);
 
             var expectedResultBytes = Bytes.FromString(cloudTestData["kExpectedResult"], StringEncoding.BASE64);
-            var deserialized = cloudSerializer.Deserialize(expectedResultBytes);
+            var deserialized = this.cloudSerializer.Deserialize(expectedResultBytes);
 
             Assert.Equal(entries.Count, deserialized.Count);
 
-            foreach (var entry in entries){
+            foreach (var entry in entries)
+            {
                 var deserializedEntry = deserialized[entry.Key];
                 Assert.Equal(entry.Value.CreationDate, deserializedEntry.CreationDate);
                 Assert.Equal(entry.Value.Data, deserializedEntry.Data);
@@ -47,10 +51,10 @@ namespace Keyknox.Tests
         [Fact]
         public void KTC_18()
         {
-            var entriesList = cloudSerializer.Deserialize(new byte[0]);
+            var entriesList = this.cloudSerializer.Deserialize(new byte[0]);
             Assert.NotNull(entriesList);
             Assert.Empty(entriesList);
-            entriesList = cloudSerializer.Deserialize(null);
+            entriesList = this.cloudSerializer.Deserialize(null);
 
             Assert.NotNull(entriesList);
             Assert.Empty(entriesList);

@@ -1,5 +1,4 @@
-﻿using System;
-namespace Keyknox.Tests
+﻿namespace Keyknox.Tests
 {
     using System;
     using Microsoft.Extensions.Configuration;
@@ -22,6 +21,5 @@ namespace Keyknox.Tests
         public string ApiPublicKeyId { get; private set; }
 
         public string ServiceAddress { get; private set; }
-
     }
 }

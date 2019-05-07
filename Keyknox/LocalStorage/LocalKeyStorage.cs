@@ -40,19 +40,34 @@ namespace Keyknox
     using System.Collections.Generic;
     using Virgil.SDK;
 
-    public class LocalKeyStorage : KeyStorage
+    public class LocalKeyStorage : KeyStorage, ILocalKeyStorage
     {
         private const string StorageIdentity = "Keyknox";
 
 #if OSX
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.LocalKeyStorage"/> class.
+        /// </summary>
+        /// <param name="identity">User's identity to group keys in local storage.</param>
         public LocalKeyStorage(string identity)
         {
+            if (string.IsNullOrWhiteSpace(identity))
+            {
+                throw new ArgumentException("Storage identity should not be empty");
+            }
+
             this.Identity = identity;
             SecureStorage.StorageIdentity = StorageIdentity;
             this.coreStorage = new SecureStorage(identity);
         }
 
 #else
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.LocalKeyStorage"/> class.
+        /// </summary>
+        /// <param name="identity">User's identity to group keys in local storage.</param>
+        /// <param name="password">Password for local storage.
+        /// Should be specified for implementation on Windows, Linux or Android.</param>
         public LocalKeyStorage(
             string identity,
             string password)
@@ -62,22 +77,46 @@ namespace Keyknox
             this.coreStorage = new SecureStorage(password, identity);
         }
 #endif
+
+        /// <summary>
+        /// User's identity to group keys in local storage.
+        /// </summary>
+        /// <value>The identity.</value>
         public string Identity { get; private set; }
 
+        /// <summary>
+        /// Load key entry by the specified name.
+        /// </summary>
+        /// <returns>The loaded key entry.</returns>
+        /// <param name="name">Key entry name.</param>
         public new KeyEntry Load(string name)
         {
-            var entry = base.Load(name);
+            var entry = base.Load(name ?? throw new ArgumentException(nameof(name)));
             entry.Meta = MetaDate.DeleteFrom(entry.Meta);
             return entry;
         }
 
+        /// <summary>
+        /// Load key entry with creation and modification dates by the specified name.
+        /// </summary>
+        /// <returns>The loaded key entry.</returns>
+        /// <param name="name">Key entry name.</param>
         public KeyEntry LoadFull(string name)
         {
-            return base.Load(name);
+            return base.Load(name ?? throw new ArgumentException(nameof(name)));
         }
 
+        /// <summary>
+        /// Store the specified keyEntry, creationDate and modificationDate.
+        /// </summary>
+        /// <returns>The stored key entry.</returns>
+        /// <param name="keyEntry">Key entry.</param>
+        /// <param name="creationDate">Creation date.</param>
+        /// <param name="modificationDate">Modification date.</param>
         public KeyEntry Store(KeyEntry keyEntry, DateTime creationDate, DateTime modificationDate)
         {
+            this.ValidateStoreParams(keyEntry, creationDate, modificationDate);
+
             var meta = keyEntry.Meta ?? new Dictionary<string, string>();
             var newKeyEntry = new KeyEntry()
             {
@@ -93,12 +132,35 @@ namespace Keyknox
             return newKeyEntry;
         }
 
+        /// <summary>
+        /// Store the specified key entry.
+        /// </summary>
+        /// <returns>The stored key entry.</returns>
+        /// <param name="keyEntry">Key entry to be stored.</param>
         public new KeyEntry Store(KeyEntry keyEntry)
         {
             return this.Store(
                 keyEntry,
                 DateTime.UtcNow.RoundTicks(),
                 DateTime.UtcNow.RoundTicks());
+        }
+
+        private void ValidateStoreParams(KeyEntry keyEntry, DateTime creationDate, DateTime modificationDate)
+        {
+            if (keyEntry == null)
+            {
+                throw new ArgumentException(nameof(keyEntry));
+            }
+
+            if (creationDate == null)
+            {
+                throw new ArgumentException(nameof(creationDate));
+            }
+
+            if (modificationDate == null)
+            {
+                throw new ArgumentException(nameof(modificationDate));
+            }
         }
     }
 }

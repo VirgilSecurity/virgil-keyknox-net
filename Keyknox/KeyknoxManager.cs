@@ -36,6 +36,7 @@
 
 namespace Keyknox
 {
+    using System;
     using System.Linq;
     using System.Threading.Tasks;
     using Keyknox.Client;
@@ -43,6 +44,9 @@ namespace Keyknox
     using Virgil.SDK.Common;
     using Virgil.SDK.Web.Authorization;
 
+    /// <summary>
+    /// Keyknox manager controls Keyknox value with E2EE.
+    /// </summary>
     public class KeyknoxManager
     {
         private IKeyknoxCrypto crypto;
@@ -51,6 +55,14 @@ namespace Keyknox
         private IPublicKey[] publicKeys;
         private IPrivateKey privateKey;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.KeyknoxManager"/> class.
+        /// </summary>
+        /// <param name="accessTokenProvider">Access token provider for getting Access Token.</param>
+        /// <param name="publicKeys">Public keys for ecnryption and signature verification.</param>
+        /// <param name="privateKey">Private key for decryption and signature generation.</param>
+        /// <param name="keyknoxClient">Keyknox client.</param>
+        /// <param name="keyknoxCrypto">Keyknox crypto.</param>
         public KeyknoxManager(
             IAccessTokenProvider accessTokenProvider,
             IPrivateKey privateKey,
@@ -59,16 +71,27 @@ namespace Keyknox
             IKeyknoxCrypto keyknoxCrypto = null)
         {
             this.crypto = keyknoxCrypto ?? new KeyknoxCrypto();
-            this.accessTokenProvider = accessTokenProvider;
-            this.privateKey = privateKey;
+            this.accessTokenProvider = accessTokenProvider ?? throw new ArgumentNullException(nameof(accessTokenProvider));
+            this.privateKey = privateKey ?? throw new ArgumentNullException(nameof(privateKey));
             this.publicKeys = publicKeys;
             this.keyknoxClient = keyknoxClient ?? new KeyknoxClient(new NewtonsoftJsonExtendedSerializer());
         }
 
+        /// <summary>
+        /// Signs, encrypts and then pushes data to Keyknox service
+        /// </summary>
+        /// <returns>Decrypted and then verified data from Keyknox service.</returns>
+        /// <param name="data">Data to be pushed.</param>
+        /// <param name="previoushash">Previous data hash.</param>
         public async Task<DecryptedKeyknoxValue> PushValueAsync(
             byte[] data,
             byte[] previoushash = null)
         {
+            if (data == null || data.Length == 0)
+            {
+                throw new ArgumentException($"{nameof(data)} is null or empty.");
+            }
+
             var token = await this.accessTokenProvider.GetTokenAsync(new TokenContext(null, "put", false, "keyknox"));
             var detachedEncryptionResult = this.crypto.Encrypt(data, this.privateKey, this.publicKeys);
             var encryptedKeyknoxVal = await this.keyknoxClient.PushValueAsync(
@@ -79,6 +102,10 @@ namespace Keyknox
             return this.crypto.Decrypt(encryptedKeyknoxVal, this.privateKey, this.publicKeys);
         }
 
+        /// <summary>
+        /// Pulls the value from Keyknox service and then decrypts and verifies it.
+        /// </summary>
+        /// <returns>Decrypted and verified data from Keyknox service.</returns>
         public async Task<DecryptedKeyknoxValue> PullValueAsync()
         {
             var token = await this.accessTokenProvider.GetTokenAsync(new TokenContext(null, "get", false, "keyknox"));
@@ -86,6 +113,10 @@ namespace Keyknox
             return this.crypto.Decrypt(encryptedKeyknoxVal, this.privateKey, this.publicKeys);
         }
 
+        /// <summary>
+        /// Resets the value in the cloud and increments its version.
+        /// </summary>
+        /// <returns>Decrypted keyknox value.</returns>
         public async Task<DecryptedKeyknoxValue> ResetValueAsync()
         {
             var token = await this.accessTokenProvider.GetTokenAsync(new TokenContext(null, "delete", false, "keyknox"));
@@ -93,6 +124,13 @@ namespace Keyknox
             return decryptedKeyknoxVal;
         }
 
+        /// <summary>
+        /// Updates public keys for ecnryption and signature verification
+        /// and private key for decryption and signature generation
+        /// </summary>
+        /// <param name="newPublicKeys">New public keys for ecnryption and signature verification.</param>
+        /// <param name="newPrivateKey">New private key for decryption and signature generation.</param>
+        /// <returns>Encrypted and signed by specified keys <see cref="T:Keyknox.DecryptedKeyknoxValue"/></returns>
         public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(
             IPublicKey[] newPublicKeys,
             IPrivateKey newPrivateKey = null)
@@ -110,6 +148,12 @@ namespace Keyknox
             return await this.PushValueAsync(decryptedKeyknoxVal.Value, decryptedKeyknoxVal.KeyknoxHash);
         }
 
+        /// <summary>
+        /// Updates public keys for ecnryption and signature verification
+        /// and private key for decryption and signature generation and pushes new value to Keyknox service.
+        /// </summary>
+        /// <param name="newPublicKeys">New public keys for ecnryption and signature verification.</param>
+        /// <param name="newPrivateKey">New private key for decryption and signature generation.</param>
         public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(
             byte[] data,
             byte[] previoushash,

@@ -19,6 +19,15 @@
   <ItemGroup>
     <ProjectReference Include="..\Keyknox\Keyknox.csproj" />
   </ItemGroup>
+    <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'">
+    <DefineConstants>$(DefineConstants);Windows;</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))'">
+    <DefineConstants>$(DefineConstants);OSX;</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
+    <DefineConstants>$(DefineConstants);Linux;</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <None Remove="appsettings.json" />
     <None Remove="Cloud.json" />

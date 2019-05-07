@@ -1,26 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Bogus;
-using Keyknox.Client;
-using Virgil.Crypto;
-using Virgil.CryptoAPI;
-using Virgil.SDK.Common;
-using Xunit;
-
-namespace Keyknox.Tests
+﻿namespace Keyknox.Tests
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using Bogus;
+    using Keyknox.Client;
+    using Virgil.Crypto;
+    using Virgil.CryptoAPI;
+    using Virgil.SDK.Common;
+    using Xunit;
+
     public class KeyknoxManagerTests
     {
-        Faker faker = new Faker();
-        KeyknoxManager manager;
-        VirgilCrypto crypto;
-        string defaultIdentity;
+        private Faker faker = new Faker();
+        private KeyknoxManager manager;
+        private VirgilCrypto crypto;
+        private string defaultIdentity;
+
         public KeyknoxManagerTests()
         {
             this.crypto = new VirgilCrypto();
-            this.defaultIdentity = faker.Random.Guid().ToString();
+            this.defaultIdentity = this.faker.Random.Guid().ToString();
             this.manager = IntegrationHelper.GetKeyknoxManager(this.defaultIdentity);
         }
 
@@ -48,12 +49,11 @@ namespace Keyknox.Tests
         public async Task KTC_8_PullEmptyValue()
         {
             var data = this.faker.Random.Bytes(10);
-            var newManager = IntegrationHelper.GetKeyknoxManager(faker.Random.Guid().ToString());
+            var newManager = IntegrationHelper.GetKeyknoxManager(this.faker.Random.Guid().ToString());
             var pulled = await newManager.PullValueAsync();
             Assert.Empty(pulled.Value);
             Assert.Equal("1.0", pulled.Version);
         }
-
 
         [Fact]
         public async Task KTC_9_PullValueWithoutSignerInTrustedPubKeys()
@@ -61,12 +61,13 @@ namespace Keyknox.Tests
             var keyPairs = new KeyPair[50];
             for (var i = 0; i < 50; i++)
             {
-                keyPairs[i] = crypto.GenerateKeys();
+                keyPairs[i] = this.crypto.GenerateKeys();
             }
+
             var prevPart = keyPairs.SkipLast(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
             var lastPart = keyPairs.Skip(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
             var data = this.faker.Random.Bytes(10);
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPairs[0].PrivateKey,
                 prevPart,
@@ -82,7 +83,6 @@ namespace Keyknox.Tests
                 lastPart,
                 identity);
 
-
             var ex = Record.ExceptionAsync(async () =>
             {
                 await newManager2.PullValueAsync();
@@ -90,23 +90,22 @@ namespace Keyknox.Tests
             Assert.IsType<VirgilCryptoException>(await ex);
         }
 
-
         [Fact]
         public async Task KTC_10_PullValueWithSignerInTrustedPubKeys()
         {
             var keyPairs = new KeyPair[50];
             for (var i = 0; i < 50; i++)
             {
-                keyPairs[i] = crypto.GenerateKeys();
+                keyPairs[i] = this.crypto.GenerateKeys();
             }
+
             var prevPart = keyPairs.SkipLast(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
             var lastPart = keyPairs.Skip(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
-
 
             Random rand = new Random();
 
             var data = this.faker.Random.Bytes(10);
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPairs[rand.Next(25)].PrivateKey,
                 prevPart,
@@ -141,16 +140,16 @@ namespace Keyknox.Tests
             var keyPairs = new KeyPair[50];
             for (var i = 0; i < 50; i++)
             {
-                keyPairs[i] = crypto.GenerateKeys();
+                keyPairs[i] = this.crypto.GenerateKeys();
             }
+
             var prevPart = keyPairs.SkipLast(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
             var lastPart = keyPairs.Skip(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
-
 
             Random rand = new Random();
 
             var data = this.faker.Random.Bytes(10);
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPairs[rand.Next(25)].PrivateKey,
                 prevPart,
@@ -193,7 +192,6 @@ namespace Keyknox.Tests
             });
             Assert.IsType<VirgilCryptoException>(await ex);
 
-
             var newManager5 = IntegrationHelper.GetKeyknoxManager(
               keyPairs[rand.Next(25, 50)].PrivateKey,
               prevPart,
@@ -212,16 +210,16 @@ namespace Keyknox.Tests
             var keyPairs = new KeyPair[50];
             for (var i = 0; i < 50; i++)
             {
-                keyPairs[i] = crypto.GenerateKeys();
+                keyPairs[i] = this.crypto.GenerateKeys();
             }
+
             var prevPart = keyPairs.SkipLast(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
             var lastPart = keyPairs.Skip(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
-
 
             Random rand = new Random();
 
             var data = this.faker.Random.Bytes(10);
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPairs[rand.Next(25)].PrivateKey,
                 prevPart,
@@ -280,23 +278,22 @@ namespace Keyknox.Tests
             Assert.IsType<VirgilCryptoException>(await ex);
         }
 
-
         [Fact]
         public async Task KTC_13_UpdateRecipientsWithEmptyData()
         {
             var keyPairs = new KeyPair[50];
             for (var i = 0; i < 50; i++)
             {
-                keyPairs[i] = crypto.GenerateKeys();
+                keyPairs[i] = this.crypto.GenerateKeys();
             }
+
             var prevPart = keyPairs.SkipLast(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
             var lastPart = keyPairs.Skip(25).ToArray().Select((arg) => arg.PublicKey).ToArray();
-
 
             Random rand = new Random();
 
             var data = this.faker.Random.Bytes(10);
-            var identity = faker.Random.Guid().ToString();
+            var identity = this.faker.Random.Guid().ToString();
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPairs[rand.Next(25)].PrivateKey,
                 prevPart,
@@ -327,15 +324,14 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_15_ResetInvalidValue()
         {
-            var keyPair1 = crypto.GenerateKeys();
-            var keyPair2 = crypto.GenerateKeys();
-            var identity = faker.Random.Guid().ToString();
+            var keyPair1 = this.crypto.GenerateKeys();
+            var keyPair2 = this.crypto.GenerateKeys();
+            var identity = this.faker.Random.Guid().ToString();
 
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPair1.PrivateKey,
-                new IPublicKey[]{keyPair1.PublicKey},
+                new IPublicKey[] { keyPair1.PublicKey },
                 identity);
-
 
             var data = this.faker.Random.Bytes(10);
             var pushedVal = await newManager.PushValueAsync(data);
@@ -357,14 +353,13 @@ namespace Keyknox.Tests
         [Fact]
         public async Task KTC_16_UploadedByManagerValueIsAvailableForClient()
         {
-            var keyPair1 = crypto.GenerateKeys();
-            var identity = faker.Random.Guid().ToString();
+            var keyPair1 = this.crypto.GenerateKeys();
+            var identity = this.faker.Random.Guid().ToString();
 
             var newManager = IntegrationHelper.GetKeyknoxManager(
                 keyPair1.PrivateKey,
                 new IPublicKey[] { keyPair1.PublicKey },
                 identity);
-
 
             var data = this.faker.Random.Bytes(10);
             var pushedVal = await newManager.PushValueAsync(data);
@@ -383,7 +378,10 @@ namespace Keyknox.Tests
             Assert.Equal(pushedVal.KeyknoxHash, pullResponse.KeyknoxHash);
 
             var keyknoxCrypto = new KeyknoxCrypto();
-            var decrypted = keyknoxCrypto.Decrypt(pullResponse, keyPair1.PrivateKey, new IPublicKey[]{keyPair1.PublicKey});
+            var decrypted = keyknoxCrypto.Decrypt(
+                pullResponse,
+                keyPair1.PrivateKey,
+                new IPublicKey[] { keyPair1.PublicKey });
             Assert.Equal(pushedVal.Value, decrypted.Value);
         }
     }

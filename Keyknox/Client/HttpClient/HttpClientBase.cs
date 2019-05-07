@@ -87,7 +87,7 @@ namespace Keyknox.Client
             {
                 var serializedBody = this.serializer.Serialize(body);
                 request.Content = new StringContent(serializedBody, Encoding.UTF8, "application/json");
-                request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash ?? String.Empty);
+                request.Headers.TryAddWithoutValidation(PreviousHashHeaderAlias, body.KeyknoxHash ?? string.Empty);
             }
 
             var response = await this.client.SendAsync(request).ConfigureAwait(false);
@@ -112,6 +112,16 @@ namespace Keyknox.Client
 
         private HttpRequestMessage NewRequest(HttpMethod method, string endpoint, string appToken)
         {
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                throw new ArgumentException(nameof(endpoint));
+            }
+
+            if (string.IsNullOrWhiteSpace(appToken))
+            {
+                throw new ArgumentException(nameof(appToken));
+            }
+
             Uri endpointUri = this.BaseUri != null
                                   ? new Uri(this.BaseUri, endpoint)
                                   : new Uri(endpoint);

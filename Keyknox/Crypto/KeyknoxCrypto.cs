@@ -36,10 +36,14 @@
 
 namespace Keyknox
 {
+    using System;
     using System.Linq;
     using Virgil.Crypto;
     using Virgil.CryptoAPI;
 
+    /// <summary>
+    /// Keyknox crypto has crypto operations needed for Keyknox.
+    /// </summary>
     public class KeyknoxCrypto : IKeyknoxCrypto
     {
         private readonly VirgilCrypto crypto;
@@ -49,21 +53,38 @@ namespace Keyknox
             this.crypto = new VirgilCrypto();
         }
 
+        /// <summary>
+        /// Encrypt and sign the specified data by specified privateKey and publicKeys.
+        /// </summary>
+        /// <returns>The encrypted data and meta information.</returns>
+        /// <param name="data">Data to be encrypted.</param>
+        /// <param name="privateKey">Private key to generate signature.</param>
+        /// <param name="publicKeys">Public keys to encrypt data.</param>
         public DetachedEncryptionResult Encrypt(byte[] data, IPrivateKey privateKey, IPublicKey[] publicKeys)
         {
             ValidatePublicKeys(publicKeys);
             ValidatePrivateKey(privateKey);
 
-            var encrypted = this.crypto.SignThenEncryptDetached(data, privateKey, publicKeys);
-            return new DetachedEncryptionResult()
-            {
-                Meta = encrypted.Meta,
-                Value = encrypted.Value
-            };
+            return this.crypto.SignThenEncryptDetached(
+                data ?? throw new ArgumentNullException(nameof(data)),
+                privateKey,
+                publicKeys);
         }
 
+        /// <summary>
+        /// Decrypt and verify the specified encryptedKeyknoxValue using specified privateKey and publicKeys.
+        /// </summary>
+        /// <returns>The decrypted data and meta information.</returns>
+        /// <param name="encryptedKeyknoxValue">Encrypted keyknox value.</param>
+        /// <param name="privateKey">Private key.</param>
+        /// <param name="publicKeys">Public keys.</param>
         public DecryptedKeyknoxValue Decrypt(EncryptedKeyknoxValue encryptedKeyknoxValue, IPrivateKey privateKey, IPublicKey[] publicKeys)
         {
+            if (encryptedKeyknoxValue == null)
+            {
+                throw new ArgumentNullException(nameof(encryptedKeyknoxValue));
+            }
+
             if ((encryptedKeyknoxValue.Meta == null || !encryptedKeyknoxValue.Meta.Any()) &&
                 (encryptedKeyknoxValue.Value == null || !encryptedKeyknoxValue.Value.Any()))
             {

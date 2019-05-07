@@ -38,14 +38,33 @@ namespace Keyknox
 {
     using System;
 
+    /// <summary>
+    /// Keyknox service value.
+    /// </summary>
     public class KeyknoxValue
     {
+        /// <summary>
+        /// Gets or sets the meta info.
+        /// </summary>
+        /// <value>The meta.</value>
         public byte[] Meta { get; set; }
 
+        /// <summary>
+        /// Gets or sets the value.
+        /// </summary>
+        /// <value>The value.</value>
         public byte[] Value { get; set; }
 
+        /// <summary>
+        /// Gets or sets the version of data. version format: Major.Minor
+        /// </summary>
+        /// <value>The version.</value>
         public string Version { get; set; }
 
+        /// <summary>
+        /// Gets or sets the keyknox hash.
+        /// </summary>
+        /// <value>The keyknox hash.</value>
         public byte[] KeyknoxHash { get; set; }
     }
 }

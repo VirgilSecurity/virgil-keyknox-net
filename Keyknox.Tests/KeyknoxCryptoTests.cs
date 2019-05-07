@@ -1,31 +1,33 @@
-using System;
-using Bogus;
-using Virgil.Crypto;
-using Virgil.CryptoAPI;
-using Xunit;
-
 namespace Keyknox.Tests
 {
+    using System;
+    using Bogus;
+    using Virgil.Crypto;
+    using Virgil.CryptoAPI;
+    using Xunit;
+
     public class KeyknoxCryptoTests
     {
-        KeyknoxCrypto keyknoxCrypto;
-        KeyPair keyPair;
-        Faker faker;
-        public KeyknoxCryptoTests(){
+        private KeyknoxCrypto keyknoxCrypto;
+        private KeyPair keyPair;
+        private Faker faker;
+
+        public KeyknoxCryptoTests()
+        {
             var crypto = new VirgilCrypto();
             this.keyPair = crypto.GenerateKeys();
             this.keyknoxCrypto = new KeyknoxCrypto();
             this.faker = new Faker();
         }
+
         [Fact]
+
         public void Encrypt_Empty_PrivateKey_RaiseException()
         {
-            
             var data = this.faker.Random.Bytes(5);
-           
             var ex = Record.Exception(() =>
             {
-                keyknoxCrypto.Encrypt(data, null, new[] { this.keyPair.PublicKey });
+                this.keyknoxCrypto.Encrypt(data, null, new[] { this.keyPair.PublicKey });
             });
 
             Assert.IsType<KeyknoxException>(ex);
@@ -38,7 +40,7 @@ namespace Keyknox.Tests
 
             var ex = Record.Exception(() =>
             {
-                keyknoxCrypto.Encrypt(data, keyPair.PrivateKey, null);
+                this.keyknoxCrypto.Encrypt(data, this.keyPair.PrivateKey, null);
             });
 
             Assert.IsType<KeyknoxException>(ex);
@@ -51,7 +53,7 @@ namespace Keyknox.Tests
 
             var ex = Record.Exception(() =>
             {
-                keyknoxCrypto.Encrypt(data, keyPair.PrivateKey, new IPublicKey[]{});
+                this.keyknoxCrypto.Encrypt(data, this.keyPair.PrivateKey, new IPublicKey[] { });
             });
 
             Assert.IsType<KeyknoxException>(ex);
@@ -63,7 +65,10 @@ namespace Keyknox.Tests
             var crypto = new VirgilCrypto();
             var recipientKeys = crypto.GenerateKeys();
             var data = this.faker.Random.Bytes(5);
-            var encrypted = crypto.SignThenEncryptDetached(data, keyPair.PrivateKey, new PublicKey[] { recipientKeys.PublicKey });
+            var encrypted = crypto.SignThenEncryptDetached(
+                data,
+                this.keyPair.PrivateKey,
+                new PublicKey[] { recipientKeys.PublicKey });
             Assert.NotNull(encrypted.Value);
             Assert.NotEmpty(encrypted.Value);
             Assert.NotNull(encrypted.Meta);
@@ -72,7 +77,7 @@ namespace Keyknox.Tests
                 encrypted.Value, 
                 encrypted.Meta,
                 recipientKeys.PrivateKey,
-                new PublicKey[] { keyPair.PublicKey });
+                new PublicKey[] { this.keyPair.PublicKey });
             Assert.Equal(data, decryptedData);
         }
     }

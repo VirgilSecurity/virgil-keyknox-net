@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keyknox.Tests", "Keyknox.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keyknox", "Keyknox\Keyknox.csproj", "{7C6F60B2-DE7C-4AFD-B997-A50852B7DF6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Keyknox1", "Keyknox\Keyknox1.csproj", "{9C721E22-4808-4335-A868-777ED5414B99}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,9 +19,5 @@ Global
 		{7C6F60B2-DE7C-4AFD-B997-A50852B7DF6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7C6F60B2-DE7C-4AFD-B997-A50852B7DF6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7C6F60B2-DE7C-4AFD-B997-A50852B7DF6D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C721E22-4808-4335-A868-777ED5414B99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C721E22-4808-4335-A868-777ED5414B99}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C721E22-4808-4335-A868-777ED5414B99}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C721E22-4808-4335-A868-777ED5414B99}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

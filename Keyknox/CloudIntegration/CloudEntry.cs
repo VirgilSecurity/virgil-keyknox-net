@@ -36,10 +36,49 @@
 
 namespace Keyknox
 {
-    public class DetachedEncryptionResult
-    {
-        public byte[] Meta { get; set; }
+    using System;
+    using System.Collections.Generic;
+    using System.Runtime.Serialization;
 
-        public byte[] Value { get; set; }
+    /// <summary>
+    /// Describes entry which is serialized and kept in cloud
+    /// </summary>
+    [DataContract]
+    public class CloudEntry
+    {
+        /// <summary>
+        /// Gets or sets the cloud entry name.
+        /// </summary>
+        /// <value>The name.</value>
+        [DataMember(Name = "name")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cloud entry data.
+        /// </summary>
+        /// <value>The data.</value>
+        [DataMember(Name = "data")]
+        public byte[] Data { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cloud entry creation date.
+        /// </summary>
+        /// <value>The creation date.</value>
+        [DataMember(Name = "creation_date")]
+        public DateTime CreationDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cloud entry modification date.
+        /// </summary>
+        /// <value>The modification date.</value>
+        [DataMember(Name = "modification_date")]
+        public DateTime ModificationDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the cloud entry meta.
+        /// </summary>
+        /// <value>The meta.</value>
+        [DataMember(Name = "meta", EmitDefaultValue = false)]
+        public IDictionary<string, string> Meta { get; set; }
     }
 }

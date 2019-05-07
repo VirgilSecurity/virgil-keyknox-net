@@ -41,6 +41,9 @@ namespace Keyknox.Client
     using System.Threading.Tasks;
     using Virgil.SDK.Common;
 
+    /// <summary>
+    /// Keyknox client operates with Virgil Keyknox service.
+    /// </summary>
     public class KeyknoxClient : HttpClientBase, IKeyknoxClient
     {
         public KeyknoxClient(IJsonSerializer serializer, string serviceUrl = null)
@@ -48,6 +51,11 @@ namespace Keyknox.Client
         {
         }
 
+        /// <summary>
+        /// Pulls the value from Keyknox service.
+        /// </summary>
+        /// <returns>Encrypted Keyknox value.</returns>
+        /// <param name="token">Auth token.</param>
         public async Task<EncryptedKeyknoxValue> PullValueAsync(string token)
         {
             var response = await this.SendAsync(
@@ -62,6 +70,14 @@ namespace Keyknox.Client
             };
         }
 
+        /// <summary>
+        /// Pushes the value, meta and previousHash to Keyknox service.
+        /// </summary>
+        /// <returns>Encrypted keyknox value.</returns>
+        /// <param name="meta">Meta to be pushed to Keyknox service.</param>
+        /// <param name="value">Value to be pushed to Keyknox service.</param>
+        /// <param name="previousHash">Previous hash to be pushed to Keyknox service.</param>
+        /// <param name="token">Auth Token.</param>
         public async Task<EncryptedKeyknoxValue> PushValueAsync(byte[] meta, byte[] value, byte[] previousHash, string token)
         {
             var model = new BodyModel()
@@ -86,6 +102,11 @@ namespace Keyknox.Client
             };
         }
 
+        /// <summary>
+        /// Resets the value in the cloud and increments its version.
+        /// </summary>
+        /// <param name="token">Auth token.</param>
+        /// <returns>Decrypted keyknox value.</returns>
         public async Task<DecryptedKeyknoxValue> ResetValueAsync(string token)
         {
             var response = await this.SendAsync(

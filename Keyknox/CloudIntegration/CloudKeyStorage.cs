@@ -48,7 +48,10 @@ namespace Keyknox
     using Virgil.SDK.Common;
     using Virgil.SDK.Web.Authorization;
 
-    public class CloudKeyStorage
+    /// <summary>
+    /// Cloud key storage stores keys in Virgil cloud using E2EE
+    /// </summary>
+    public class CloudKeyStorage : ICloudKeyStorage
     {
         private static readonly SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
 
@@ -56,6 +59,11 @@ namespace Keyknox
         private ICloudSerializer serializer;
         private CloudKeyCache cloudKeyCache;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.CloudKeyStorage"/> class.
+        /// </summary>
+        /// <param name="keyknoxManager">Keyknox manager.</param>
+        /// <param name="serializer">Serializer.</param>
         public CloudKeyStorage(
             KeyknoxManager keyknoxManager,
             ICloudSerializer serializer = null)
@@ -64,6 +72,12 @@ namespace Keyknox
             this.serializer = serializer ?? new CloudSerializer(new NewtonsoftJsonExtendedSerializer());
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.CloudKeyStorage"/> class.
+        /// </summary>
+        /// <param name="accessTokenProvider">Access token provider for getting Access Token.</param>
+        /// <param name="privateKey">Private key used for decryption and signing.</param>
+        /// <param name="publicKeys">Public keys used for encryption and signature verification.</param>
         public CloudKeyStorage(
             IAccessTokenProvider accessTokenProvider,
             IPrivateKey privateKey,
@@ -72,12 +86,20 @@ namespace Keyknox
         {
         }
 
-        public bool IsStorageSynchronized()
+        /// <summary>
+        /// Whether the storage was synchronized.
+        /// </summary>
+        /// <returns><c>true</c>, if storage was synchronized, <c>false</c> otherwise.</returns>
+        public bool IsSynchronized()
         {
             return this.cloudKeyCache != null && this.cloudKeyCache.Response != null;
         }
 
-        public async Task<Dictionary<string, CloudEntry>> RetrieveCloudEntriesAsync()
+        /// <summary>
+        /// Uploads all cloud entries from the cloud.
+        /// </summary>
+        /// <returns>Uploaded cloud entries and their names.</returns>
+        public async Task<Dictionary<string, CloudEntry>> UploadAllAsync()
         {
             await SemaphoreSlim.WaitAsync();
             try
@@ -93,7 +115,11 @@ namespace Keyknox
             return this.cloudKeyCache.Entries;
         }
 
-        public async Task DeteleEntryAsync(string name)
+        /// <summary>
+        /// Deletes entry with the specified name from the cloud.
+        /// </summary>
+        /// <param name="name">Entry name.</param>
+        public async Task DeteleAsync(string name)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -118,6 +144,9 @@ namespace Keyknox
             }
         }
 
+        /// <summary>
+        /// Deletes all entries from the cloud.
+        /// </summary>
         public async Task DeteleAllAsync()
         {
             await SemaphoreSlim.WaitAsync();
@@ -139,7 +168,12 @@ namespace Keyknox
             }
         }
 
-        public bool ExistsEntry(string name)
+        /// <summary>
+        /// Checks if entry with the specified name exists in the cloud.
+        /// </summary>
+        /// <returns>True if exists.</returns>
+        /// <param name="name">Cloud entry name.</param>
+        public bool Exists(string name)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -154,7 +188,11 @@ namespace Keyknox
             }
         }
 
-        public List<CloudEntry> RetrieveAllEntries()
+        /// <summary>
+        /// Retrieves all entries from the cloud.
+        /// </summary>
+        /// <returns>All cloud entries.</returns>
+        public List<CloudEntry> RetrieveAll()
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -169,7 +207,12 @@ namespace Keyknox
             }
         }
 
-        public CloudEntry RetrieveEntry(string name)
+        /// <summary>
+        /// Retrieves the cloud entry.
+        /// </summary>
+        /// <returns>The stored cloud entry.</returns>
+        /// <param name="name">Cloud entry name.</param>
+        public CloudEntry Retrieve(string name)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -189,16 +232,28 @@ namespace Keyknox
             }
         }
 
+        /// <summary>
+        /// Stores an entry with the specified name, data and meta in the cloud.
+        /// </summary>
+        /// <returns>The saved cloud entry.</returns>
+        /// <param name="name">Entry name.</param>
+        /// <param name="data">Data to be stored.</param>
+        /// <param name="meta">Meta to be stored.</param>
         public async Task<CloudEntry> StoreAsync(string name, byte[] data, IDictionary<string, string> meta)
         {
             this.ThrowExceptionIfNotSynchronized();
 
             var entry = new KeyEntry() { Name = name, Value = data, Meta = meta };
-            var stored = await this.StoreEntriesAsync(new List<KeyEntry> { entry });
+            var stored = await this.StoreAsync(new List<KeyEntry> { entry });
             return stored.First();
         }
 
-        public async Task<List<CloudEntry>> StoreEntriesAsync(List<KeyEntry> keyEntries)
+        /// <summary>
+        /// Stores the specified key entries in the cloud.
+        /// </summary>
+        /// <returns>Saved cloud entries.</returns>
+        /// <param name="keyEntries">Key entries to be stored.</param>
+        public async Task<List<CloudEntry>> StoreAsync(List<KeyEntry> keyEntries)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -240,7 +295,13 @@ namespace Keyknox
             }
         }
 
-        public async Task<CloudEntry> UpdateEntryAsync(string name, byte[] data, IDictionary<string, string> meta = null)
+        /// <summary>
+        /// Updates a cloud entry with the specified name.
+        /// </summary>
+        /// <returns>The updated cloud entry.</returns>
+        /// <param name="name">Name of entry to be updated.</param>
+        /// <param name="data">New data to be stored in the entry with the specified name.</param>
+        public async Task<CloudEntry> UpdateAsync(string name, byte[] data, IDictionary<string, string> meta = null)
         {
             this.ThrowExceptionIfNotSynchronized();
 
@@ -269,6 +330,13 @@ namespace Keyknox
             }
         }
 
+        /// <summary>
+        /// Updates public keys for ecnryption and signature verification
+        /// and private key for decryption and signature generation
+        /// </summary>
+        /// <param name="publicKeys">New public keys for ecnryption and signature verification.</param>
+        /// <param name="privateKey">New private key for decryption and signature generation.</param>
+        /// <returns>Encrypted and signed by specified keys <see cref="T:Keyknox.DecryptedKeyknoxValue"/></returns>
         public async Task<DecryptedKeyknoxValue> UpdateRecipientsAsync(IPublicKey[] publicKeys, IPrivateKey privateKey)
         {
             this.ThrowExceptionIfNotSynchronized();
@@ -295,7 +363,7 @@ namespace Keyknox
 
         private void ThrowExceptionIfNotSynchronized()
         {
-            if (!this.IsStorageSynchronized())
+            if (!this.IsSynchronized())
             {
                 throw new SyncException("The cloud storage isn't synchronized.");
             }

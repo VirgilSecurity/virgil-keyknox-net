@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-
-/*
+﻿/*
  * Copyright (C) 2015-2019 Virgil Security Inc.
  *
  * All rights reserved.
@@ -40,22 +36,30 @@ using System.Runtime.Serialization;
 
 namespace Keyknox
 {
-    [DataContract]
-    public class CloudEntry
+    using Virgil.Crypto;
+    using Virgil.CryptoAPI;
+
+    /// <summary>
+    /// This interface describes crypto operations needed for Keyknox.
+    /// </summary>
+    public interface IKeyknoxCrypto
     {
-        [DataMember(Name = "name")]
-        public string Name { get; set; }
+        /// <summary>
+        /// Encrypt and sign the specified data by specified privateKey and publicKeys.
+        /// </summary>
+        /// <returns>The encrypted data and meta information.</returns>
+        /// <param name="data">Data to be encrypted.</param>
+        /// <param name="privateKey">Private key to generate signature.</param>
+        /// <param name="publicKeys">Public keys to encrypt data.</param>
+        DetachedEncryptionResult Encrypt(byte[] data, IPrivateKey privateKey, IPublicKey[] publicKeys);
 
-        [DataMember(Name = "data")]
-        public byte[] Data { get; set; }
-
-        [DataMember(Name = "creation_date")]
-        public DateTime CreationDate { get; set; }
-
-        [DataMember(Name = "modification_date")]
-        public DateTime ModificationDate { get; set; }
-
-        [DataMember(Name = "meta", EmitDefaultValue = false)]
-        public IDictionary<string, string> Meta { get; set; }
+        /// <summary>
+        /// Decrypt and verify the specified encryptedKeyknoxValue using specified privateKey and publicKeys.
+        /// </summary>
+        /// <returns>The decrypted data and meta information.</returns>
+        /// <param name="encryptedKeyknoxValue">Encrypted keyknox value.</param>
+        /// <param name="privateKey">Private key.</param>
+        /// <param name="publicKeys">Public keys.</param>
+        DecryptedKeyknoxValue Decrypt(EncryptedKeyknoxValue encryptedKeyknoxValue, IPrivateKey privateKey, IPublicKey[] publicKeys);
     }
 }
