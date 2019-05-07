@@ -55,7 +55,7 @@ namespace Keyknox
     {
         private static readonly SemaphoreSlim SemaphoreSlim = new SemaphoreSlim(1, 1);
 
-        private KeyknoxManager keyknoxManager;
+        private IKeyknoxManager keyknoxManager;
         private ICloudSerializer serializer;
         private CloudKeyCache cloudKeyCache;
 
@@ -65,7 +65,7 @@ namespace Keyknox
         /// <param name="keyknoxManager">Keyknox manager.</param>
         /// <param name="serializer">Serializer.</param>
         public CloudKeyStorage(
-            KeyknoxManager keyknoxManager,
+            IKeyknoxManager keyknoxManager,
             ICloudSerializer serializer = null)
         {
             this.keyknoxManager = keyknoxManager;

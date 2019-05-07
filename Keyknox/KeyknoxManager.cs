@@ -47,7 +47,7 @@ namespace Keyknox
     /// <summary>
     /// Keyknox manager controls Keyknox value with E2EE.
     /// </summary>
-    public class KeyknoxManager
+    public class KeyknoxManager : IKeyknoxManager
     {
         private IKeyknoxCrypto crypto;
         private IAccessTokenProvider accessTokenProvider;

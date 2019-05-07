@@ -90,7 +90,7 @@ namespace Keyknox
         {
         }
 
-        #else
+#else
 
         /// <summary>
         /// Initializes a new instance of the <see cref="T:Keyknox.SyncKeyStorage"/> class.
