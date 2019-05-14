@@ -70,52 +70,6 @@ namespace Keyknox
             this.localStorage = localStorage ?? throw new ArgumentNullException(nameof(localStorage));
         }
 
-#if OSX
-        /// <summary>
-        /// Initializes a new instance of the <see cref="T:Keyknox.SyncKeyStorage"/> class.
-        /// </summary>
-        /// <param name="identity">User's identity to group keys in local storage.</param>
-        /// <param name="accessTokenProvider">Access token provider for getting Access Token.</param>
-        /// <param name="publicKeys">Public keys for ecnryption and signature verification.</param>
-        /// <param name="privateKey">Private key for decryption and signature generation.</param>
-        public SyncKeyStorage(
-            string identity,
-            IAccessTokenProvider accessTokenProvider,
-            IPrivateKey privateKey,
-            IPublicKey[] publicKeys)
-            : this(
-                identity,
-                new CloudKeyStorage(accessTokenProvider, privateKey, publicKeys),
-                new LocalKeyStorage(identity))
-        {
-        }
-
-#else
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="T:Keyknox.SyncKeyStorage"/> class.
-        /// </summary>
-        /// <param name="identity">User's identity to group by in local storage.</param>
-        /// <param name="accessTokenProvider">Access token provider.</param>
-        /// <param name="password">Password for local storage.
-        /// Should be specified for implementation on Windows, Linux or Android.</param>
-        /// <param name="publicKeys">New public keys for ecnryption and signature verification.</param>
-        /// <param name="privateKey">New private key for decryption and signature generation.</param>
-        public SyncKeyStorage(
-            string identity,
-            string password,
-            IAccessTokenProvider accessTokenProvider,
-            IPrivateKey privateKey,
-            IPublicKey[] publicKeys)
-        : this(
-                identity,
-                new CloudKeyStorage(accessTokenProvider, privateKey, publicKeys),
-                new LocalKeyStorage(password, identity))
-        {
-           
-        }
-#endif
-
         /// <summary>
         /// User's identity to group by in local storage.
         /// </summary>

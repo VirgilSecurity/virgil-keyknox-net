@@ -15,24 +15,20 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <DefineConstants>$(DefineConstants);TRACE;RELEASE;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
+    <DefineConstants>TRACE;RELEASE;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DefineConstants>$(DefineConstants);TRACE;DEBUG;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP;NETCOREAPP2_1</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Class1.cs" />
     <Compile Remove="Crypto\DetachedEncryptionResult.cs" />
+    <Compile Remove="SyncKeyStorageExtension.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Virgil.Crypto" Version="2.6.2" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
     <PackageReference Include="Virgil.SDK" Version="5.0.7" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Crypto\" />
-    <Folder Include="CloudIntegration\" />
-    <Folder Include="Client\HttpClient\" />
-    <Folder Include="LocalStorage\" />
-  </ItemGroup>
+  <Import Project="..\Keyknox.Shared\Keyknox.Shared.projitems" Label="Shared" Condition="Exists('..\Keyknox.Shared\Keyknox.Shared.projitems')" />
 </Project>

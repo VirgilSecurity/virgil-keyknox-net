@@ -40,16 +40,16 @@ namespace Keyknox
     using System.Collections.Generic;
     using Virgil.SDK;
 
-    public class LocalKeyStorage : KeyStorage, ILocalKeyStorage
+    public class LocalKeyStorageBase : KeyStorage, ILocalKeyStorage
     {
-        private const string StorageIdentity = "Keyknox";
+        protected const string StorageIdentity = "Keyknox";
 
-#if OSX
         /// <summary>
-        /// Initializes a new instance of the <see cref="T:Keyknox.LocalKeyStorage"/> class.
-        /// </summary>
+        /// Initializes a new instance of the <see cref="T:Keyknox.LocalKeyStorageBase"/> class.
         /// <param name="identity">User's identity to group keys in local storage.</param>
-        public LocalKeyStorage(string identity)
+        /// <param name="coreStorage">Secure storage from Virgil.SDK</param>
+        /// </summary>
+        public LocalKeyStorageBase(string identity, SecureStorage coreStorage)
         {
             if (string.IsNullOrWhiteSpace(identity))
             {
@@ -58,31 +58,14 @@ namespace Keyknox
 
             this.Identity = identity;
             SecureStorage.StorageIdentity = StorageIdentity;
-            this.coreStorage = new SecureStorage(identity);
+            this.coreStorage = coreStorage ?? throw new ArgumentException("Secure Storage should not be null");
         }
-
-#else
-        /// <summary>
-        /// Initializes a new instance of the <see cref="T:Keyknox.LocalKeyStorage"/> class.
-        /// </summary>
-        /// <param name="identity">User's identity to group keys in local storage.</param>
-        /// <param name="password">Password for local storage.
-        /// Should be specified for implementation on Windows, Linux or Android.</param>
-        public LocalKeyStorage(
-            string identity,
-            string password)
-        {
-            this.Identity = identity;
-            SecureStorage.StorageIdentity = StorageIdentity;
-            this.coreStorage = new SecureStorage(password, identity);
-        }
-#endif
 
         /// <summary>
         /// User's identity to group keys in local storage.
         /// </summary>
         /// <value>The identity.</value>
-        public string Identity { get; private set; }
+        public string Identity { get; protected set; }
 
         /// <summary>
         /// Load key entry by the specified name.
