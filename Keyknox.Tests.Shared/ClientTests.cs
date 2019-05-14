@@ -1,0 +1,123 @@
+﻿namespace Keyknox.Tests
+{
+    using System.Threading.Tasks;
+    using Bogus;
+    using Keyknox.Client;
+    using Virgil.SDK.Common;
+    using Xunit;
+
+    public class ClientTests
+    {
+        private KeyknoxCrypto keyknoxCrypto;
+        private Faker faker;
+        private ServiceTestData serviceTestData;
+        private KeyknoxClient client;
+
+        public ClientTests()
+        {
+            this.keyknoxCrypto = new KeyknoxCrypto();
+            this.faker = new Faker();
+            this.serviceTestData = new ServiceTestData("keyknox-default");
+            this.client = new KeyknoxClient(new NewtonsoftJsonExtendedSerializer(), this.serviceTestData.ServiceAddress);
+        }
+
+        [Fact]
+        public async Task KTC_1_PullValue()
+        {
+            var identity = this.faker.Random.Guid().ToString();
+            var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
+            var meta = this.faker.Random.Bytes(5);
+            var data = this.faker.Random.Bytes(10);
+
+            var response = await this.client.PushValueAsync(meta, data, null, token);
+            Assert.Equal(meta, response.Meta);
+            Assert.Equal(data, response.Value);
+            Assert.Equal("1.0", response.Version);
+            Assert.NotNull(response.KeyknoxHash);
+
+            var pullResponse = await this.client.PullValueAsync(token);
+            Assert.Equal(meta, pullResponse.Meta);
+            Assert.Equal(data, pullResponse.Value);
+            Assert.Equal("1.0", pullResponse.Version);
+            Assert.Equal(response.KeyknoxHash, pullResponse.KeyknoxHash);
+
+             var resetResponse = await this.client.ResetValueAsync(token);
+             Assert.Empty(resetResponse.Meta);
+             Assert.Empty(resetResponse.Value);
+             Assert.Equal("2.0", resetResponse.Version);
+             Assert.NotNull(resetResponse.KeyknoxHash);
+        }
+
+        [Fact]
+        public async Task KTC_3_PullEmptyValue()
+        {
+            var identity = this.faker.Random.Guid().ToString();
+            var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
+
+            var pullResponse = await this.client.PullValueAsync(token);
+            Assert.Equal("1.0", pullResponse.Version);
+            Assert.Empty(pullResponse.Meta);
+            Assert.Empty(pullResponse.Value);
+        }
+
+        [Fact]
+        public async Task KTC_4_ResetValue()
+        {
+            var identity = this.faker.Random.Guid().ToString();
+            var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
+            var meta = this.faker.Random.Bytes(5);
+            var data = this.faker.Random.Bytes(10);
+
+            var response = await this.client.PushValueAsync(meta, data, null, token);
+            Assert.Equal(meta, response.Meta);
+            Assert.Equal(data, response.Value);
+            Assert.Equal("1.0", response.Version);
+            Assert.NotNull(response.KeyknoxHash);
+
+            var resetResponse = await this.client.ResetValueAsync(token);
+            Assert.Empty(resetResponse.Meta);
+            Assert.Empty(resetResponse.Value);
+            Assert.Equal("2.0", resetResponse.Version);
+            Assert.NotNull(resetResponse.KeyknoxHash);
+        }
+
+        [Fact]
+        public async Task KTC_5_ResetEmptyValue()
+        {
+            var identity = this.faker.Random.Guid().ToString();
+            var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
+
+            var resetResponse = await this.client.ResetValueAsync(token);
+            Assert.Empty(resetResponse.Meta);
+            Assert.Empty(resetResponse.Value);
+            Assert.Equal("1.0", resetResponse.Version);
+            Assert.NotNull(resetResponse.KeyknoxHash);
+        }
+
+        [Fact]
+        public async Task KTC_2_UpdateValue()
+        {
+            var identity = this.faker.Random.Guid().ToString();
+            var token = await IntegrationHelper.GetObtainToken().Invoke(IntegrationHelper.GetTokenContext(identity));
+            var meta = this.faker.Random.Bytes(5);
+            var data = this.faker.Random.Bytes(10);
+
+            var response = await this.client.PushValueAsync(meta, data, null, token);
+            Assert.Equal(meta, response.Meta);
+            Assert.Equal(data, response.Value);
+            Assert.Equal("1.0", response.Version);
+            Assert.NotNull(response.KeyknoxHash);
+
+            var meta2 = this.faker.Random.Bytes(5);
+            var data2 = this.faker.Random.Bytes(10);
+
+            var response2 = await this.client.PushValueAsync(meta2, data2, response.KeyknoxHash, token);
+            Assert.Equal(meta2, response2.Meta);
+            Assert.Equal(data2, response2.Value);
+            Assert.Equal("2.0", response2.Version);
+            Assert.NotNull(response2.KeyknoxHash);
+
+            var resetResponse = await this.client.ResetValueAsync(token);
+        }
+    }
+}
